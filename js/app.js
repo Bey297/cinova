@@ -340,44 +340,63 @@ function displayFilms(data, source) {
     : `Mode offline • menggunakan database tersimpan (${allFilms.length} film).`);
 }
 
+
 async function loadFilms() {
-  el.refresh.disabled = true;
-  setStatus("Memperbarui database film...");
 
-  try {
-    if (DATABASE_URL.includes("USERNAME/REPOSITORY")) {
-      throw new Error("URL GitHub belum diatur di js/app.js.");
-    }
+    el.refresh.disabled = true;
 
-    const response = await fetch(DATABASE_URL, { cache: "no-store" });
-    if (!response.ok) throw new Error(`Gagal mengambil database (HTTP ${response.status}).`);
-
-    const data = await response.json();
-    if (!Array.isArray(data)) throw new Error("Format films.json harus berupa array.");
-
-    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-    displayFilms(data, "online");
-  } catch (error) {
-    console.error(error);
+    // 1. Tampilkan database lokal terlebih dahulu
     const cached = localStorage.getItem(CACHE_KEY);
 
     if (cached) {
-      try {
-        displayFilms(JSON.parse(cached), "cache");
-      } catch {
-        setStatus("Cache rusak. Periksa kembali database JSON.");
-      }
+        try {
+            displayFilms(JSON.parse(cached), "cache");
+            setStatus(`Menampilkan ${allFilms.length} film tersimpan. Memeriksa pembaruan...`);
+        } catch (error) {
+            console.error("Cache rusak:", error);
+        }
     } else {
-      allFilms = [];
-      visibleFilms = [];
-      chooseRecommendation();
-      renderMovies();
-      setStatus(`${error.message} Belum ada cache database.`);
+        setStatus("Mengunduh database film...");
     }
-  } finally {
-    el.refresh.disabled = false;
-  }
+
+    // 2. Ambil database terbaru dari GitHub
+    try {
+
+        const response = await fetch(DATABASE_URL, {
+            cache: "default"
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (!Array.isArray(data)) {
+            throw new Error("Format database tidak valid.");
+        }
+
+        // 3. Simpan database terbaru
+        localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+
+        // 4. Perbarui tampilan
+        displayFilms(data, "online");
+
+    } catch (error) {
+
+        console.error("Database online gagal:", error);
+
+        if (cached) {
+            setStatus(`Mode offline • ${allFilms.length} film tersimpan.`);
+        } else {
+            setStatus("Gagal memuat database. Periksa koneksi internet.");
+        }
+
+    } finally {
+        el.refresh.disabled = false;
+    }
 }
+
 
 // Event pencarian dan navigasi
 el.search.addEventListener("input", applyFilters);
