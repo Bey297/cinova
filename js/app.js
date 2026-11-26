@@ -136,24 +136,12 @@ function chooseRecommendation() {
 }
 
 function openWatch(film) {
+  if (!film || !film.url) {
+    setStatus("Tautan video untuk film ini belum tersedia.");
+    return;
+  }
 
-    if (!film || !film.url) {
-        setStatus("Tautan video belum tersedia.");
-        return;
-    }
-
-    window.location.href = film.url;
-}
-    const playerDialog = document.getElementById("playerDialog");
-    const videoFrame = document.getElementById("videoFrame");
-
-    if (el.dialog.open) {
-        el.dialog.close();
-    }
-
-    videoFrame.src = film.url;
-
-    playerDialog.showModal();
+  window.open(film.url, "_blank", "noopener,noreferrer");
 }
 
 function toggleFavorite(film) {
