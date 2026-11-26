@@ -323,9 +323,9 @@ function displayFilms(data, source) {
   chooseRecommendation();
   applyFilters();
 
-  setStatus(source === "online"
+  /*setStatus(source === "online"
     ? `Database berhasil diperbarui • ${allFilms.length} film.`
-    : `Mode offline • menggunakan database tersimpan (${allFilms.length} film).`);
+    : `Mode offline • menggunakan database tersimpan (${allFilms.length} film).`);*/
 }
 
 
