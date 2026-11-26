@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0d0d12">
+  <title>CINOVA - Movie</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="CINOVA Beranda"><span>▶</span> CINOVA</a>
+    <button class="icon-button" id="refreshButton" type="button" aria-label="Perbarui film" title="Perbarui film">↻</button>
+  </header>
+
+  <main>
+    <div class="search-wrap">
+      <input id="searchInput" type="search" placeholder="Cari judul film..." autocomplete="off">
+    </div>
+
+    <section class="recommend-section" id="recommendSection">
+      <div class="section-heading"><h2>Rekomendasi</h2><span class="recommend-label">PILIHAN</span></div>
+      <article class="recommend-card" id="recommendCard">
+        <div class="recommend-poster" id="recommendPoster"></div>
+        <div class="recommend-info">
+          <h1 id="recommendTitle">Memuat rekomendasi...</h1>
+          <p class="metadata" id="recommendMeta">—</p>
+          <p class="recommend-description" id="recommendDescription">Film pilihan CINOVA.</p>
+          <button class="primary-button" id="recommendWatch" type="button" disabled>▶ Tonton</button>
+        </div>
+      </article>
+    </section>
+
+    <section class="catalog-section">
+      <div class="section-heading">
+        <h2 id="catalogTitle">Semua Film</h2>
+        <span id="filmCount" class="muted">0 film</span>
+      </div>
+      <p id="statusMessage" class="status" role="status">Mengambil database film...</p>
+      <div id="movieGrid" class="movie-grid"></div>
+      <p id="emptyMessage" class="empty-message" hidden>Film tidak ditemukan.</p>
+      <nav class="pagination" id="pagination" aria-label="Navigasi halaman"></nav>
+    </section>
+
+    <dialog class="detail-dialog" id="detailDialog">
+      <button class="dialog-close" id="closeDetail" type="button" aria-label="Tutup">×</button>
+      <img class="detail-poster" id="detailPoster" alt="Poster film">
+      <div class="detail-content">
+        <h2 id="detailTitle"></h2>
+        <p class="metadata" id="detailMeta"></p>
+        <p class="detail-description" id="detailDescription"></p>
+        <div class="detail-actions">
+          <button class="primary-button" id="detailWatch" type="button">▶ Tonton</button>
+          <button class="favorite-button" id="detailFavorite" type="button">♡ Favorit</button>
+        </div>
+      </div>
+    </dialog>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Navigasi utama">
+    <a class="active" href="#" id="homeNav" aria-current="page"><span>⌂</span>Beranda</a>
+    <a href="#catalog-section" id="filmsNav"><span>▣</span>Film</a>
+    <a href="#catalog-section" id="favoritesNav"><span>♡</span>Favorit</a>
+  </nav>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
