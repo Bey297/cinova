@@ -2,7 +2,7 @@
   CINOVA - aplikasi katalog film
   Isi films.json di GitHub, lalu masukkan URL RAW GitHub pada DATABASE_URL.   */
 
-const DATABASE_URL =                     "https://raw.githubusercontent.com/Bey297/cinova/refs/heads/main/database/films.json";
+const DATABASE_URL = "https://raw.githubusercontent.com/Bey297/cinova/refs/heads/main/database/films.json";
 
 const FILMS_PER_PAGE = 12;
 const CACHE_KEY = "cinova_films_cache";
@@ -139,6 +139,9 @@ function openWatch(film) {
         setStatus("Tautan video belum tersedia.");
         return;
     }
+
+    window.location.href = film.url;
+}
 
     const playerDialog = document.getElementById("playerDialog");
     const videoFrame = document.getElementById("videoFrame");
