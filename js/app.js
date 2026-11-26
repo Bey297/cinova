@@ -177,7 +177,7 @@ function openDetails(film) {
     film.duration ? `Durasi ${film.duration}` : ""
   ].filter(Boolean).join(" • ");
   el.detailDescription.textContent =
-    text(film.deskripsi, "Belum ada deskripsi untuk film ini.");
+    text(film.deskripsi, "");
   el.detailWatch.disabled = !film.url;
   el.detailWatch.onclick = () => openWatch(film);
   updateDetailFavoriteButton();
