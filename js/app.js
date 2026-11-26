@@ -1,12 +1,13 @@
 /*
   CINOVA - aplikasi katalog film
   Isi films.json di GitHub, lalu masukkan URL RAW GitHub pada DATABASE_URL.   */
-                                       const DATABASE_URL =
-  "https://raw.githubusercontent.com/Bey297/cinova/refs/heads/main/database/films.json";
-                                       const FILMS_PER_PAGE = 12;
+
+const DATABASE_URL =                     "https://raw.githubusercontent.com/Bey297/cinova/refs/heads/main/database/films.json";
+
+const FILMS_PER_PAGE = 12;
 const CACHE_KEY = "cinova_films_cache";
-const FAVORITES_KEY = "cinova_favorite_films";                                
-let allFilms = [];
+const FAVORITES_KEY = "cinova_favorite_films";
+                                       let allFilms = [];
 let visibleFilms = [];
 let currentPage = 1;
 let recommendedFilm = null;
@@ -133,11 +134,22 @@ function chooseRecommendation() {
 }
 
 function openWatch(film) {
-  if (!film || !film.url) {
-    setStatus("Tautan video untuk film ini belum tersedia.");
-    return;
-  }
-  window.open(film.url, "_blank", "noopener,noreferrer");
+
+    if (!film || !film.url) {
+        setStatus("Tautan video belum tersedia.");
+        return;
+    }
+
+    const playerDialog = document.getElementById("playerDialog");
+    const videoFrame = document.getElementById("videoFrame");
+
+    if (el.dialog.open) {
+        el.dialog.close();
+    }
+
+    videoFrame.src = film.url;
+
+    playerDialog.showModal();
 }
 
 function toggleFavorite(film) {
@@ -390,5 +402,15 @@ el.dialog.addEventListener("click", event => {
   if (event.target === el.dialog) el.dialog.close();
 });
 
+
+document.getElementById("closePlayer").addEventListener("click", () => {
+
+    const playerDialog = document.getElementById("playerDialog");
+    const videoFrame = document.getElementById("videoFrame");
+
+    videoFrame.src = "about:blank";
+    playerDialog.close();
+
+});
 // Database otomatis dimuat saat aplikasi dibuka.
 loadFilms();
