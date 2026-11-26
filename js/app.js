@@ -1,15 +1,17 @@
 /*
   CINOVA - aplikasi katalog film
-  Isi films.json di GitHub, lalu masukkan URL RAW GitHub pada DATABASE_URL.   */
+  Isi films.json di GitHub, lalu masukkan URL RAW GitHub pada DATABASE_URL.
+*/
 
-const DATABASE_URL = "https://raw.githubusercontent.com/Bey297/cinova/refs/heads/main/database/films.json";
+const DATABASE_URL =
+  "https://raw.githubusercontent.com/Bey297/cinova/refs/heads/main/database/films.json";
 
 const FILMS_PER_PAGE = 12;
 const CACHE_KEY = "cinova_films_cache";
 const FAVORITES_KEY = "cinova_favorite_films";
-                                       let allFilms = [];
-let visibleFilms = [];
-let currentPage = 1;
+
+let allFilms = [];
+let visibleFilms = [];                 let currentPage = 1;
 let recommendedFilm = null;
 let currentDetailFilm = null;
 let activeView = "home";
@@ -142,7 +144,6 @@ function openWatch(film) {
 
     window.location.href = film.url;
 }
-
     const playerDialog = document.getElementById("playerDialog");
     const videoFrame = document.getElementById("videoFrame");
 
