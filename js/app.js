@@ -230,7 +230,7 @@ function rotateHome() {
 }
 
 /* ==========================================
-   PEMUTAR VIDEO EMBED - PERBAIKAN UTAMA
+   PEMUTAR VIDEO EMBED
 ========================================== */
 
 function openWatch(url) {
@@ -247,29 +247,42 @@ function openWatch(url) {
     return;
   }
 
+  let parsedUrl;
+
   try {
-    const parsedUrl = new URL(url.trim());
+    parsedUrl = new URL(url.trim());
 
-    if (
-      parsedUrl.protocol !== "https:" &&
-      parsedUrl.protocol !== "http:"
-    ) {
-      setStatus("Format tautan video tidak valid.");
-      return;
+    if (!["https:", "http:"].includes(parsedUrl.protocol)) {
+      throw new Error("Protokol URL tidak valid");
     }
+  } catch (error) {
+    console.error("URL video:", error);
+    setStatus("Tautan video tidak valid.");
+    return;
+  }
 
+  try {
+    // Tutup detail film jika masih terbuka
     if (el.dialog && el.dialog.open) {
       el.dialog.close();
     }
 
-    videoFrame.src = parsedUrl.href;
+    // Bersihkan URL sebelumnya
+    videoFrame.src = "about:blank";
 
+    // Buka dialog pemutar
     if (!playerDialog.open) {
       playerDialog.showModal();
     }
+
+    // Muat URL film yang dipilih
+    videoFrame.src = parsedUrl.href;
+
+    console.log("CINOVA Player:", parsedUrl.href);
+
   } catch (error) {
-    console.error("Kesalahan URL video:", error);
-    setStatus("Tautan video tidak valid.");
+    console.error("Kesalahan pemutar:", error);
+    setStatus("Gagal membuka pemutar video.");
   }
 }
 
@@ -285,6 +298,7 @@ function closePlayer() {
     playerDialog.close();
   }
 }
+
 
 /* ==========================================
    FAVORIT
