@@ -2,207 +2,202 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#09090d">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#090b12">
+    <meta name="description" content="CINOVA - Temukan dan nikmati berbagai film favorit.">
 
-<title>CINOVA - Movie Streaming</title>
+    <title>CINOVA - Movie Streaming</title>
+
     <link rel="stylesheet" href="css/style.css">
-    <script src="js/app.js" defer></script>
 </head>
-
 <body>
 
-<header>
-    <a href="#" id="brandHome" class="logo">CINOVA</a>
-    <span id="statusMessage" class="header-status">
-        Memuat database...
-    </span>
-</header>
+    <header class="navbar">
+        <a href="#" class="logo">CINO<span>VA</span></a>
 
-<main>
+        <nav class="nav-links">
+            <a href="#home" class="active">Beranda</a>
+            <a href="#movies">Film</a>
+            <a href="#favorites">Favorit</a>
+        </nav>
 
-    <!-- REKOMENDASI -->
-    <section class="hero" id="recommendPoster">
-        <div class="hero-content">
-            <span class="hero-label">CINOVA ORIGINAL SELECTION</span>
-
-            <h1 id="recommendTitle">
-                Memuat rekomendasi...
-            </h1>
-
-            <div id="recommendMeta" class="muted"></div>
-
-            <p id="recommendDescription"></p>
-
-            <button
-                id="recommendWatch"
-                class="primary-button"
-                disabled>
-                Memuat...
-            </button>
-        </div>
-    </section>
-
-    <!-- KATALOG -->
-    <section class="section" id="catalog-section">
-
-        <div class="section-heading">
-            <h2 id="catalogTitle">Pilihan Untukmu</h2>
-
-            <span id="filmCount" class="muted">0 judul</span>
-        </div>
-
-        <input
-            type="search"
-            id="searchInput"
-            class="search-box"
-            placeholder="Cari judul film atau serial...">
-
-        <div id="typeFilters" class="filters">
-            <button class="filter-chip active" data-type="all">
-                Semua
-            </button>
-
-            <button class="filter-chip" data-type="movie">
-                Film
-            </button>
-
-            <button class="filter-chip" data-type="series">
-                Series
-            </button>
-        </div>
-
-        <div id="genreFilters" class="filters"></div>
-
-        <div id="movieGrid" class="movie-grid"></div>
-
-        <div id="emptyMessage" hidden>
-            Konten tidak ditemukan.
-        </div>
-
-        <div id="pagination"></div>
-
-        <div style="text-align:center">
-            <button
-                id="refreshButton"
-                class="secondary-button"
-                type="button">
-                ↻ Muat Ulang Database
-            </button>
-        </div>
-
-    </section>
-
-</main>
-
-<footer>
-    CINOVA © 2026
-    <br>
-    Your Movie Streaming Experience
-</footer>
-
-<!-- NAVIGASI -->
-<nav class="bottom-nav">
-    <a href="#" id="homeNav" class="active">Beranda</a>
-    <a href="#" id="filmsNav">Film</a>
-    <a href="#" id="seriesNav">Series</a>
-    <a href="#" id="favoritesNav">Favorit</a>
-</nav>
-
-<!-- DETAIL FILM -->
-<dialog id="detailDialog">
-
-    <div class="dialog-content">
-
-        <button
-            id="closeDetail"
-            class="dialog-close"
-            type="button">
-            ×
+        <button class="menu-btn" id="menuBtn" aria-label="Buka menu">
+            ☰
         </button>
+    </header>
 
-        <span id="detailType" class="hero-label">FILM</span>
+    <main>
 
-        <div style="margin-top:25px; overflow:auto">
+        <section class="hero" id="home">
+            <div class="hero-overlay"></div>
 
-            <img
-                id="detailPoster"
-                class="detail-poster"
-                src=""
-                alt="Poster film">
+            <div class="hero-content">
+                <span class="hero-label">CINOVA ORIGINAL COLLECTION</span>
 
-            <h2 id="detailTitle"></h2>
+                <h1 id="heroTitle">Selamat Datang di CINOVA</h1>
 
-            <div id="detailMeta" class="detail-meta"></div>
+                <p id="heroDescription">
+                    Temukan film favoritmu dan nikmati pengalaman menonton.
+                </p>
 
-            <p
-                id="detailDescription"
-                class="detail-description">
+                <div class="hero-info" id="heroInfo"></div>
+
+                <button class="primary-btn" id="heroPlay">
+                    ▶ Tonton Sekarang
+                </button>
+            </div>
+
+            <div class="hero-indicators" id="heroIndicators"></div>
+        </section>
+
+        <section class="main-content" id="movies">
+
+            <div class="section-heading">
+                <div>
+                    <span class="section-subtitle">EXPLORE CINEMA</span>
+                    <h2>Jelajahi Film</h2>
+                </div>
+
+                <span class="film-count" id="filmCount">Memuat...</span>
+            </div>
+
+            <div class="search-area">
+                <div class="search-box">
+                    <span>⌕</span>
+                    <input
+                        type="search"
+                        id="searchInput"
+                        placeholder="Cari judul film..."
+                        autocomplete="off"
+                    >
+                    <button id="clearSearch" aria-label="Hapus pencarian">×</button>
+                </div>
+
+                <select id="sortSelect">
+                    <option value="random">Terbaru</option>
+                    <option value="oldest">Terlama</option>
+                    <option value="rating">Rating tertinggi</option>
+                    <option value="az">Judul A-Z</option>
+                </select>
+            </div>
+
+            <div class="genre-list" id="genreList">
+                <button class="genre-btn active" data-genre="all">
+                    Semua
+                </button>
+            </div>
+
+            <div class="movie-grid" id="movieGrid">
+                <div class="loading">
+                    <div class="loader"></div>
+                    <p>Memuat koleksi film...</p>
+                </div>
+            </div>
+            <div class="pagination" id="pagination"></div>
+
+            <div class="empty-state" id="emptyState" hidden>
+                <span>⌕</span>
+                <h3>Film tidak ditemukan</h3>
+                <p>Coba gunakan kata kunci atau genre lainnya.</p>
+            </div>
+
+        </section>
+
+        <section class="main-content favorites-section" id="favorites">
+
+            <div class="section-heading">
+                <div>
+                    <span class="section-subtitle">YOUR COLLECTION</span>
+                    <h2>Film Favorit</h2>
+                </div>
+
+                <span class="film-count" id="favoriteCount">0 Film</span>
+            </div>
+
+            <div class="movie-grid" id="favoriteGrid">
+                <p class="favorite-empty">
+                    Belum ada film favorit.
+                </p>
+            </div>
+
+        </section>
+
+    </main>
+
+    <footer>
+        <a href="#" class="logo">CINO<span>VA</span></a>
+        <p>Temukan cerita, nikmati sinema.</p>
+        <small>© 2026 CINOVA. All rights reserved.</small>
+    </footer>
+
+    <!-- DETAIL FILM -->
+    <div class="modal" id="detailModal">
+        <div class="modal-backdrop" data-close="detail"></div>
+
+        <div class="detail-box">
+            <button class="modal-close" data-close="detail">×</button>
+
+            <div class="detail-banner" id="detailBanner"></div>
+
+            <div class="detail-content">
+                <span class="section-subtitle">CINOVA MOVIE</span>
+                <h2 id="detailTitle"></h2>
+                <div class="detail-info" id="detailInfo"></div>
+                <p id="detailGenre"></p>
+
+                <div class="detail-actions">
+                    <button class="primary-btn" id="detailPlay">
+                        ▶ Putar Film
+                    </button>
+
+                    <button class="secondary-btn" id="detailFavorite">
+                        ♡ Favorit
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIDEO PLAYER -->
+    <div class="player-modal" id="playerModal">
+        <div class="player-header">
+            <div>
+                <span class="player-brand">CINOVA</span>
+                <h3 id="playerTitle">Pemutar Film</h3>
+            </div>
+
+            <button class="player-close" id="closePlayer">×</button>
+        </div>
+
+        <div class="player-container">
+            <iframe
+                id="videoFrame"
+                src="about:blank"
+                title="CINOVA Video Player"
+                allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+                allowfullscreen
+                referrerpolicy="strict-origin-when-cross-origin">
+            </iframe>
+        </div>
+
+        <div class="player-footer">
+            <p id="playerStatus">
+                Jika video tidak dapat diputar, gunakan tombol buka sumber.
             </p>
 
+            <a
+                href="#"
+                id="openSource"
+                target="_blank"
+                rel="noopener noreferrer">
+                Buka Sumber Video ↗
+            </a>
         </div>
-
-        <div class="detail-actions">
-
-            <button
-                id="detailWatch"
-                class="primary-button"
-                type="button">
-                ▶ Putar Film
-            </button>
-
-            <button
-                id="detailFavorite"
-                class="secondary-button"
-                type="button">
-                ♡ Favorit
-            </button>
-
-        </div>
-
-        <!-- SERIES -->
-        <div id="seriesArea" hidden>
-
-            <h3>Daftar Episode</h3>
-
-            <select id="seasonSelect"></select>
-
-            <div id="episodeList"></div>
-
-        </div>
-
     </div>
 
-</dialog>
+    <div class="toast" id="toast"></div>
 
-<!-- PEMUTAR VIDEO -->
-<dialog id="playerDialog" class="player-dialog">
-
-    <button
-        id="closePlayer"
-        class="dialog-close"
-        type="button"
-        aria-label="Tutup pemutar">
-        ×
-    </button>
-
-    <div class="player-container">
-
-        <iframe
-            id="videoFrame"
-            src="about:blank"
-            title="CINOVA Video Player"
-            allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-            allowfullscreen>
-        </iframe>
-
-    </div>
-
-</dialog>
-
-<!-- JAVASCRIPT UTAMA CINOVA -->
-<script src="js/app.js" defer></script>
-
+    <script src="js/app.js"></script>
 </body>
 </html>
