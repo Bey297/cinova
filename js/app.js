@@ -160,13 +160,8 @@ function rotateHome() {
   if (activeView === "home") applyFilters();
 }
 
-function openWatch(source) {
-    const videoUrl =
-        typeof source === "string"
-            ? source
-            : source?.url;
-
-    if (!videoUrl) {
+function openWatch(url) {
+    if (typeof url !== "string" || !url.trim()) {
         setStatus("Tautan video belum tersedia.");
         return;
     }
@@ -175,17 +170,18 @@ function openWatch(source) {
     const videoFrame = $("videoFrame");
 
     if (!playerDialog || !videoFrame) {
-        window.open(videoUrl, "_blank");
+        setStatus("Pemutar video tidak ditemukan.");
         return;
     }
 
-    if (el.dialog && el.dialog.open) {
+    if (el.dialog.open) {
         el.dialog.close();
     }
 
-    videoFrame.src = videoUrl;
+    videoFrame.src = url.trim();
     playerDialog.showModal();
 }
+
 
 function toggleFavorite(item) {
   const key = itemKey(item);
