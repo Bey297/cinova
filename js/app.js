@@ -160,16 +160,26 @@ function rotateHome() {
   if (activeView === "home") applyFilters();
 }
 
-function openWatch(url) {
-  if (!url) {
-    setStatus("Tautan video belum tersedia.");
-    return;
-  }
-  const dialog = $("playerDialog");
-  const frame = $("videoFrame");
-  frame.src = url;
-  if (typeof dialog.showModal === "function") dialog.showModal();
-  else window.open(url, "_blank", "noopener,noreferrer");
+function openWatch(film) {
+    if (!film || !film.url) {
+        setStatus("Tautan video belum tersedia.");
+        return;
+    }
+
+    const playerDialog = document.getElementById("playerDialog");
+    const videoFrame = document.getElementById("videoFrame");
+
+    if (!playerDialog || !videoFrame) {
+        window.location.href = film.url;
+        return;
+    }
+
+    if (el.dialog && el.dialog.open) {
+        el.dialog.close();
+    }
+
+    videoFrame.src = film.url;
+    playerDialog.showModal();
 }
 function toggleFavorite(item) {
   const key = itemKey(item);
@@ -432,9 +442,9 @@ function setView(view) {
   const activeLink = $(id);
 
   if (activeLink) {
-  activeLink.classList.add("active");
-  activeLink.setAttribute("aria-current", "page");
-  }
+    activeLink.classList.add("active");
+    activeLink.setAttribute("aria-current", "page");
+    }
   activeType =
     view === "films" ? "movie" : view === "series" ? "series" : "all";
   if (view === "favorites") activeType = "all";
