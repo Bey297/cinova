@@ -6,406 +6,375 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#0d0d12">
 
-    <title>CINOVA - Movie & Series</title>
+    <meta name="description" content="CINOVA - Temukan dan tonton film serta series favoritmu.">
+
+    <title>CINOVA - Movie</title>
 
     <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
 
-    <!-- HEADER -->
-    <header class="topbar">
+<header class="topbar">
 
-        <a
-            class="brand"
-            href="#"
-            id="brandHome"
-            aria-label="CINOVA Beranda"
-        >
-            <span>▶</span> CINOVA
-        </a>
+    <a class="brand" id="brandHome" href="#" aria-label="CINOVA Beranda">
+        <span>▶</span> CINOVA
+    </a>
 
-        <button
-            class="icon-button"
-            id="refreshButton"
-            type="button"
-            aria-label="Perbarui database"
-            title="Perbarui database"
-        >
-            ↻
-        </button>
+    <button
+        class="icon-button"
+        id="refreshButton"
+        type="button"
+        aria-label="Perbarui film">
+        ↻
+    </button>
 
-    </header>
+</header>
 
 
-    <main>
+<main>
 
-        <!-- PENCARIAN -->
-        <div class="search-wrap">
+    <!-- PENCARIAN -->
 
-            <input
-                id="searchInput"
-                type="search"
-                placeholder="Cari judul film atau series..."
-                autocomplete="off"
-            >
+    <div class="search-wrap">
+
+        <input
+            id="searchInput"
+            type="search"
+            placeholder="Cari judul film..."
+            autocomplete="off">
+
+    </div>
+
+
+    <!-- REKOMENDASI -->
+
+    <section
+        class="recommend-section"
+        id="recommendSection">
+
+        <div class="section-heading">
+
+            <h2>Rekomendasi</h2>
+
+            <span class="recommend-label">PILIHAN</span>
+
+        </div>
+
+        <article
+            class="recommend-card"
+            id="recommendCard">
+
+            <div
+                class="recommend-poster"
+                id="recommendPoster">
+            </div>
+
+            <div class="recommend-info">
+
+                <h1 id="recommendTitle">
+                    Memuat rekomendasi...
+                </h1>
+
+                <p
+                    class="metadata"
+                    id="recommendMeta">
+                    —
+                </p>
+
+                <p
+                    class="recommend-description"
+                    id="recommendDescription">
+                    Film pilihan CINOVA.
+                </p>
+
+                <button
+                    class="primary-button"
+                    id="recommendWatch"
+                    type="button"
+                    disabled>
+                    ▶ Tonton
+                </button>
+
+            </div>
+
+        </article>
+
+    </section>
+
+
+    <!-- KATALOG FILM -->
+
+    <section
+        class="catalog-section"
+        id="catalog-section">
+
+        <div class="section-heading">
+
+            <h2 id="catalogTitle">
+                Semua Film
+            </h2>
+
+            <span
+                id="filmCount"
+                class="muted">
+                0 judul
+            </span>
 
         </div>
 
 
-        <!-- REKOMENDASI -->
-        <section
-            class="recommend-section"
-            id="recommendSection"
-        >
+        <!-- FILTER TIPE -->
 
-            <div class="section-heading">
+        <div
+            id="typeFilters"
+            class="filter-row">
 
-                <h2>Rekomendasi</h2>
+            <button
+                class="filter-chip active"
+                data-type="all"
+                type="button">
+                Semua
+            </button>
 
-                <span class="recommend-label">
-                    PILIHAN
-                </span>
+            <button
+                class="filter-chip"
+                data-type="movie"
+                type="button">
+                Film
+            </button>
 
-            </div>
+            <button
+                class="filter-chip"
+                data-type="series"
+                type="button">
+                Series
+            </button>
+
+        </div>
 
 
-            <article
-                class="recommend-card"
-                id="recommendCard"
-            >
+        <!-- FILTER GENRE -->
+
+        <div
+            id="genreFilters"
+            class="genre-wrap">
+        </div>
+
+
+        <!-- STATUS -->
+
+        <p
+            id="statusMessage"
+            class="status"
+            role="status">
+            Mengambil database film...
+        </p>
+
+
+        <!-- DAFTAR FILM -->
+
+        <div
+            id="movieGrid"
+            class="movie-grid">
+        </div>
+
+
+        <!-- KONTEN KOSONG -->
+
+        <p
+            id="emptyMessage"
+            class="empty-message"
+            hidden>
+            Konten tidak ditemukan.
+        </p>
+
+
+        <!-- PAGINATION -->
+
+        <nav
+            class="pagination"
+            id="pagination"
+            aria-label="Navigasi halaman">
+        </nav>
+
+    </section>
+
+
+    <!-- DETAIL FILM -->
+
+    <dialog
+        class="detail-dialog"
+        id="detailDialog">
+
+        <button
+            class="dialog-close"
+            id="closeDetail"
+            type="button"
+            aria-label="Tutup detail">
+            ×
+        </button>
+
+
+        <img
+            class="detail-poster"
+            id="detailPoster"
+            alt="Poster film">
+
+
+        <div class="detail-content">
+
+            <span
+                id="detailType"
+                class="content-type-label">
+            </span>
+
+            <h2 id="detailTitle"></h2>
+
+            <p
+                class="metadata"
+                id="detailMeta">
+            </p>
+
+            <p
+                class="detail-description"
+                id="detailDescription">
+            </p>
+
+
+            <!-- SERIES -->
+
+            <div
+                id="seriesArea"
+                class="series-area"
+                hidden>
+
+                <label for="seasonSelect">
+                    Pilih Season
+                </label>
+
+                <select id="seasonSelect"></select>
 
                 <div
-                    class="recommend-poster"
-                    id="recommendPoster"
-                ></div>
-
-
-                <div class="recommend-info">
-
-                    <h1 id="recommendTitle">
-                        Memuat rekomendasi...
-                    </h1>
-
-                    <p
-                        class="metadata"
-                        id="recommendMeta"
-                    >
-                        —
-                    </p>
-
-                    <p
-                        class="recommend-description"
-                        id="recommendDescription"
-                    >
-                        Pilihan tontonan CINOVA.
-                    </p>
-
-                    <button
-                        class="primary-button"
-                        id="recommendWatch"
-                        type="button"
-                        disabled
-                    >
-                        ▶ Tonton
-                    </button>
-
+                    id="episodeList"
+                    class="episode-list">
                 </div>
 
-            </article>
-
-        </section>
-
-
-        <!-- KATALOG -->
-        <section
-            class="catalog-section"
-            id="catalog-section"
-        >
-
-            <div class="section-heading">
-
-                <h2 id="catalogTitle">
-                    Pilihan Untukmu
-                </h2>
-
-                <span
-                    id="filmCount"
-                    class="muted"
-                >
-                    0 judul
-                </span>
-
             </div>
 
 
-            <!-- FILTER JENIS -->
-            <div
-                class="filter-container"
-                id="typeFilters"
-            >
+            <!-- AKSI DETAIL -->
+
+            <div class="detail-actions">
 
                 <button
-                    type="button"
-                    class="filter-chip active"
-                    data-type="all"
-                >
-                    Semua
+                    class="primary-button"
+                    id="detailWatch"
+                    type="button">
+                    ▶ Tonton
                 </button>
 
                 <button
-                    type="button"
-                    class="filter-chip"
-                    data-type="movie"
-                >
-                    Film
-                </button>
-
-                <button
-                    type="button"
-                    class="filter-chip"
-                    data-type="series"
-                >
-                    Series
+                    class="favorite-button"
+                    id="detailFavorite"
+                    type="button">
+                    ♡ Favorit
                 </button>
 
             </div>
 
+        </div>
 
-            <!-- FILTER GENRE -->
-            <div
-                class="filter-container"
-                id="genreFilters"
-            >
+    </dialog>
 
-                <button
-                    type="button"
-                    class="filter-chip active"
-                    data-genre="all"
-                >
-                    Semua genre
-                </button>
 
-            </div>
+    <!-- PEMUTAR VIDEO -->
 
+    <dialog
+        id="playerDialog"
+        class="player-dialog"
+        aria-label="Pemutar Film CINOVA">
 
-            <!-- STATUS DATABASE -->
-            <p
-                id="statusMessage"
-                class="status"
-                role="status"
-            >
-                Mengambil database...
-            </p>
+        <button
+            id="closePlayer"
+            class="dialog-close"
+            type="button"
+            aria-label="Tutup pemutar">
+            ×
+        </button>
 
 
-            <!-- DAFTAR FILM -->
-            <div
-                id="movieGrid"
-                class="movie-grid"
-            ></div>
+        <div class="player-container">
 
+            <iframe
+                id="videoFrame"
+                src="about:blank"
+                title="Pemutar Film CINOVA"
+                allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+                allowfullscreen
+                loading="eager">
+            </iframe>
 
-            <!-- KOSONG -->
-            <p
-                id="emptyMessage"
-                class="empty-message"
-                hidden
-            >
-                Konten tidak ditemukan.
-            </p>
+        </div>
 
+    </dialog>
 
-            <!-- PAGINATION -->
-            <nav
-                class="pagination"
-                id="pagination"
-                aria-label="Navigasi halaman"
-            ></nav>
+</main>
 
-        </section>
 
+<!-- NAVIGASI BAWAH -->
 
-        <!-- DETAIL FILM / SERIES -->
-        <dialog
-            class="detail-dialog"
-            id="detailDialog"
-        >
+<nav
+    class="bottom-nav"
+    aria-label="Navigasi utama">
 
-            <button
-                class="dialog-close"
-                id="closeDetail"
-                type="button"
-                aria-label="Tutup"
-            >
-                ×
-            </button>
+    <a
+        class="active"
+        href="#"
+        id="homeNav"
+        aria-current="page">
 
+        <span>⌂</span>
+        Beranda
 
-            <img
-                class="detail-poster"
-                id="detailPoster"
-                alt="Poster film"
-            >
+    </a>
 
 
-            <div class="detail-content">
+    <a
+        href="#catalog-section"
+        id="filmsNav">
 
-                <span
-                    class="detail-type"
-                    id="detailType"
-                >
-                    FILM
-                </span>
+        <span>▣</span>
+        Film
 
+    </a>
 
-                <h2 id="detailTitle"></h2>
 
+    <a
+        href="#catalog-section"
+        id="seriesNav">
 
-                <p
-                    class="metadata"
-                    id="detailMeta"
-                ></p>
+        <span>▤</span>
+        Series
 
+    </a>
 
-                <p
-                    class="detail-description"
-                    id="detailDescription"
-                ></p>
 
+    <a
+        href="#catalog-section"
+        id="favoritesNav">
 
-                <!-- TOMBOL FILM -->
-                <div class="detail-actions">
+        <span>♡</span>
+        Favorit
 
-                    <button
-                        class="primary-button"
-                        id="detailWatch"
-                        type="button"
-                    >
-                        ▶ Tonton
-                    </button>
+    </a>
 
-                    <button
-                        class="favorite-button"
-                        id="detailFavorite"
-                        type="button"
-                    >
-                        ♡ Favorit
-                    </button>
+</nav>
 
-                </div>
 
+<!-- JAVASCRIPT -->
 
-                <!-- AREA SERIES -->
-                <section
-                    id="seriesArea"
-                    hidden
-                >
-
-                    <h3>Daftar Episode</h3>
-
-
-                    <label for="seasonSelect">
-                        Pilih Season
-                    </label>
-
-
-                    <select id="seasonSelect"></select>
-
-
-                    <div
-                        id="episodeList"
-                        class="episode-list"
-                    ></div>
-
-                </section>
-
-            </div>
-
-        </dialog>
-
-
-        <!-- PEMUTAR VIDEO -->
-        <dialog
-            id="playerDialog"
-            class="player-dialog"
-        >
-
-            <button
-                id="closePlayer"
-                class="dialog-close"
-                type="button"
-                aria-label="Tutup pemutar"
-            >
-                ×
-            </button>
-
-
-            <div class="player-container">
-
-                <iframe
-                    id="videoFrame"
-                    src="about:blank"
-                    allow="autoplay; fullscreen; picture-in-picture"
-                    allowfullscreen
-                    referrerpolicy="no-referrer"
-                ></iframe>
-
-            </div>
-
-        </dialog>
-
-    </main>
-
-
-    <!-- NAVIGASI BAWAH -->
-    <nav
-        class="bottom-nav"
-        aria-label="Navigasi utama"
-    >
-
-        <a
-            class="active"
-            href="#"
-            id="homeNav"
-            aria-current="page"
-        >
-            <span>⌂</span>
-            Beranda
-        </a>
-
-
-        <a
-            href="#catalog-section"
-            id="filmsNav"
-        >
-            <span>▣</span>
-            Film
-        </a>
-
-
-        <a
-            href="#catalog-section"
-            id="seriesNav"
-        >
-            <span>▤</span>
-            Series
-        </a>
-
-
-        <a
-            href="#catalog-section"
-            id="favoritesNav"
-        >
-            <span>♡</span>
-            Favorit
-        </a>
-
-    </nav>
-
-
-    <!-- JAVASCRIPT -->
-    <script src="js/app.js"></script>
+<script src="js/app.js"></script>
 
 </body>
 </html>
