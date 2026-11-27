@@ -1,30 +1,35 @@
-* {                                      box-sizing: border-box;
-}                                                                             :root {
-  color-scheme: dark;                    --bg: #0d0d12;
-  --panel: #1b1b23;                      --panel-light: #252530;
-  --text: #ffffff;
+* {
+  box-sizing: border-box;
+}
+:root {
+  color-scheme: dark;
+  --bg: #0d0d12;
+  --panel: #1b1b23;
+  --panel-light: #252530;
+  --text: #fff;
   --muted: #a3a3ad;
   --accent: #ed1424;
 }
-
 html {
   scroll-behavior: smooth;
 }
-
 body {
   margin: 0 auto;
-  max-width: 480px;
+  max-width: 600px;
   min-height: 100vh;
-  padding: 0 0 86px;
+  padding: 0 0 90px;
   background: var(--bg);
   color: var(--text);
   font-family: Arial, Helvetica, sans-serif;
 }
-
-button, input {
+button,
+input,
+select {
   font: inherit;
 }
-
+button {
+  cursor: pointer;
+}
 .topbar {
   height: 62px;
   padding: 0 17px;
@@ -32,19 +37,16 @@ button, input {
   align-items: center;
   justify-content: space-between;
 }
-
 .brand {
   color: var(--text);
   text-decoration: none;
   font-size: 24px;
   font-weight: 900;
-  letter-spacing: .4px;
+  letter-spacing: 0.4px;
 }
-
 .brand span {
   color: var(--accent);
 }
-
 .icon-button {
   width: 39px;
   height: 39px;
@@ -53,17 +55,13 @@ button, input {
   background: var(--panel-light);
   color: white;
   font-size: 25px;
-  cursor: pointer;
 }
-
 .icon-button:disabled {
-  opacity: .5;
+  opacity: 0.5;
 }
-
 .search-wrap {
   padding: 5px 15px 17px;
 }
-
 .search-wrap input {
   width: 100%;
   padding: 13px 15px;
@@ -73,77 +71,66 @@ button, input {
   border-radius: 10px;
   outline: none;
 }
-
 .search-wrap input:focus {
   border-color: var(--accent);
 }
-
 .recommend-section,
 .catalog-section {
   padding: 0 15px;
   margin-top: 12px;
 }
-
 .section-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   margin-bottom: 13px;
 }
-
 .section-heading h2 {
   margin: 0;
   font-size: 18px;
 }
-
 .recommend-label {
   color: var(--accent);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 1px;
 }
-
 .recommend-card {
   overflow: hidden;
   background: var(--panel);
   border-radius: 13px;
 }
-
 .recommend-poster {
-  height: 190px;
+  height: 210px;
   background: #252530 center 30% / cover no-repeat;
   position: relative;
 }
-
-.recommend-poster::after {
+.recommend-poster:after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(0deg, rgba(13,13,18,.75), transparent 65%);
+  background: linear-gradient(0deg, rgba(13, 13, 18, 0.45), transparent 65%);
 }
-
 .recommend-info {
   padding: 13px 14px 16px;
 }
-
 .recommend-info h1 {
   margin: 0 0 7px;
   font-size: 21px;
 }
-
 .metadata {
   margin: 0;
   color: var(--muted);
   font-size: 12px;
+  line-height: 1.5;
 }
-
 .recommend-description {
   margin: 11px 0 0;
   color: #c5c5cc;
   font-size: 13px;
   line-height: 1.5;
 }
-
 .primary-button {
   margin-top: 14px;
   padding: 10px 17px;
@@ -152,47 +139,68 @@ button, input {
   background: var(--accent);
   color: white;
   font-weight: 700;
-  cursor: pointer;
 }
-
 .primary-button:disabled {
-  opacity: .5;
+  opacity: 0.5;
   cursor: default;
 }
-
 .catalog-section {
   margin-top: 25px;
 }
-
-.muted, .status {
+.muted,
+.status {
   color: var(--muted);
   font-size: 12px;
 }
-
 .status {
   margin: -3px 0 13px;
+  line-height: 1.5;
 }
-
+.filter-row,
+.genre-wrap {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 0 12px;
+  scrollbar-width: none;
+}
+.filter-row::-webkit-scrollbar,
+.genre-wrap::-webkit-scrollbar {
+  display: none;
+}
+.filter-chip {
+  flex: 0 0 auto;
+  padding: 8px 13px;
+  border: 1px solid #393943;
+  border-radius: 20px;
+  background: var(--panel);
+  color: #ddd;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.filter-chip.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
 .movie-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px 10px;
 }
-
 .movie-card {
   min-width: 0;
+  position: relative;
   cursor: pointer;
 }
-
 .movie-poster {
   display: block;
   width: 100%;
-  aspect-ratio: 2 / 3;
+  aspect-ratio: 2/3;
   object-fit: cover;
   background: var(--panel-light);
   border-radius: 8px;
 }
-
 .movie-title {
   margin: 7px 0 4px;
   font-size: 12px;
@@ -200,100 +208,10 @@ button, input {
   font-weight: 700;
   overflow-wrap: anywhere;
 }
-
 .movie-meta {
   color: var(--muted);
   font-size: 11px;
 }
-
-.empty-message {
-  padding: 25px 5px;
-  text-align: center;
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.pagination {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: 7px;
-  padding: 22px 0 10px;
-}
-
-.page-button {
-  min-width: 34px;
-  height: 34px;
-  padding: 0 9px;
-  border: 1px solid #363640;
-  border-radius: 7px;
-  background: var(--panel);
-  color: white;
-  cursor: pointer;
-}
-
-.page-button.active {
-  border-color: var(--accent);
-  background: var(--accent);
-}
-
-.page-button:disabled {
-  opacity: .35;
-  cursor: default;
-}
-
-.bottom-nav {
-  position: fixed;
-  z-index: 5;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 480px;
-  height: 67px;
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  background: #19191f;
-  border-top: 1px solid #30303a;
-}
-
-.bottom-nav a {
-  min-width: 70px;
-  color: var(--muted);
-  text-align: center;
-  text-decoration: none;
-  font-size: 11px;
-}
-
-.bottom-nav a span {
-  display: block;
-  margin-bottom: 4px;
-  font-size: 21px;
-}
-
-.bottom-nav a.active {
-  color: var(--accent);
-}
-
-@media (min-width: 481px) {
-  body {
-    border-left: 1px solid #22222b;
-    border-right: 1px solid #22222b;
-  }
-}
-
-
-/* Kartu film dan tombol favorit */
-.movie-card {
-  position: relative;
-}
-
-.movie-poster {
-  cursor: pointer;
-}
-
 .movie-favorite {
   position: absolute;
   top: 6px;
@@ -302,37 +220,75 @@ button, input {
   height: 29px;
   border: 0;
   border-radius: 50%;
-  background: rgba(10, 10, 15, .82);
+  background: rgba(10, 10, 15, 0.82);
   color: white;
   font-size: 18px;
-  cursor: pointer;
 }
-
-.movie-favorite.saved {
-  color: #ff3345;
-}
-
-.movie-title {
-  cursor: pointer;
-}
-
-.favorite-button {
-  padding: 10px 13px;
-  border: 1px solid #555560;
-  border-radius: 7px;
-  background: var(--panel-light);
-  color: white;
-  font-weight: 700;
-  cursor: pointer;
-}
-
+.movie-favorite.saved,
 .favorite-button.saved {
-  border-color: var(--accent);
   color: #ff5260;
 }
-
+.empty-message {
+  padding: 25px 5px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 7px;
+  padding: 22px 0 10px;
+}
+.page-button {
+  min-width: 34px;
+  height: 34px;
+  padding: 0 9px;
+  border: 1px solid #363640;
+  border-radius: 7px;
+  background: var(--panel);
+  color: white;
+}
+.page-button.active {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+.page-button:disabled {
+  opacity: 0.35;
+}
+.bottom-nav {
+  position: fixed;
+  z-index: 5;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 600px;
+  height: 67px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background: #19191f;
+  border-top: 1px solid #30303a;
+}
+.bottom-nav a {
+  min-width: 60px;
+  color: var(--muted);
+  text-align: center;
+  text-decoration: none;
+  font-size: 11px;
+}
+.bottom-nav a span {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 21px;
+}
+.bottom-nav a.active {
+  color: var(--accent);
+}
 .detail-dialog {
-  width: min(92vw, 440px);
+  width: min(92vw, 480px);
   max-height: 88vh;
   padding: 0;
   overflow: auto;
@@ -341,11 +297,9 @@ button, input {
   background: #191920;
   color: white;
 }
-
 .detail-dialog::backdrop {
-  background: rgba(0, 0, 0, .78);
+  background: rgba(0, 0, 0, 0.78);
 }
-
 .dialog-close {
   position: sticky;
   float: right;
@@ -356,12 +310,10 @@ button, input {
   height: 34px;
   border: 0;
   border-radius: 50%;
-  background: rgba(0,0,0,.75);
+  background: rgba(0, 0, 0, 0.75);
   color: white;
   font-size: 24px;
-  cursor: pointer;
 }
-
 .detail-poster {
   display: block;
   width: 100%;
@@ -369,67 +321,124 @@ button, input {
   object-fit: contain;
   background: #101014;
 }
-
 .detail-content {
   padding: 16px;
 }
-
 .detail-content h2 {
-  margin: 0 0 8px;
+  margin: 5px 0 8px;
   font-size: 21px;
 }
-
+.content-type-label {
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
 .detail-description {
   color: #c5c5cc;
   font-size: 13px;
   line-height: 1.55;
   margin: 13px 0;
 }
-
 .detail-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 9px;
 }
-
-.bottom-nav a {
-  cursor: pointer;
+.favorite-button {
+  padding: 10px 13px;
+  border: 1px solid #555560;
+  border-radius: 7px;
+  background: var(--panel-light);
+  color: white;
+  font-weight: 700;
 }
-
+.series-area {
+  margin-top: 22px;
+  border-top: 1px solid #34343e;
+  padding-top: 16px;
+}
+.series-area label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.series-area select {
+  width: 100%;
+  padding: 11px;
+  border: 1px solid #393943;
+  border-radius: 8px;
+  background: var(--panel);
+  color: white;
+}
+.episode-list {
+  display: grid;
+  gap: 9px;
+  margin-top: 12px;
+}
+.episode-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px;
+  border-radius: 9px;
+  background: var(--panel);
+}
+.episode-row strong {
+  display: block;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.episode-row small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.episode-play {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 8px 10px;
+  font-size: 11px;
+}
 .player-dialog {
-    width: 100%;
-    max-width: 100%;
-    height: 100%;
-    max-height: 100%;
-    padding: 0;
-    margin: auto;
-    border: none;
-    background: #000;
-    color: white;
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  max-height: 100%;
+  padding: 0;
+  margin: auto;
+  border: 0;
+  background: #000;
+  color: white;
 }
-
 .player-dialog::backdrop {
-    background: #000;
+  background: #000;
 }
-
 .player-container {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
-
 .player-container iframe {
-    width: 100%;
-    height: 100%;
-    border: 0;
-    background: #000;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #000;
 }
-
 .player-dialog .dialog-close {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 10;
-    margin: 0;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+  margin: 0;
+}
+@media (min-width: 601px) {
+  body {
+    border-left: 1px solid #22222b;
+    border-right: 1px solid #22222b;
+  }
 }
