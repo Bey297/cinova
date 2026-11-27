@@ -72,14 +72,21 @@ function isValidItem(item) {
       typeof item["link-icon-kecil"] === "string")
   );
 }
+
 function splitGenres(value) {
-  if (Array.isArray(value))
-    return value.map((v) => text(v).trim()).filter(Boolean);
-  return text(value)
-    .split(/[,|]/)
-    .map((v) => v.trim())
+  if (Array.isArray(value)) {
+    return value
+      .flatMap(v => String(v).split(/[,|]/))
+      .map(v => v.trim())
+      .filter(Boolean);
+  }
+
+  return String(value || "")
+    .split(/[,|]|\s+(?=[A-Z])/)
+    .map(v => v.trim())
     .filter(Boolean);
 }
+
 function metadata(item) {
   return [
     item.ratting !== undefined ? `⭐ ${item.ratting}` : "",
@@ -421,8 +428,13 @@ function setView(view) {
         : view === "series"
           ? "seriesNav"
           : "favoritesNav";
-  $(id).classList.add("active");
-  $(id).setAttribute("aria-current", "page");
+  
+  const activeLink = $(id);
+
+  if (activeLink) {
+  activeLink.classList.add("active");
+  activeLink.setAttribute("aria-current", "page");
+  }
   activeType =
     view === "films" ? "movie" : view === "series" ? "series" : "all";
   if (view === "favorites") activeType = "all";
@@ -454,57 +466,106 @@ async function fetchJson(path) {
   if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
   return response.json();
 }
+
 async function loadDatabases() {
   el.refresh.disabled = true;
+
   const cached = localStorage.getItem(CACHE_KEY);
+
   if (cached) {
     try {
       displayItems(JSON.parse(cached), "cache");
       setStatus(
-        `Menampilkan ${allFilms.length} judul tersimpan. Memeriksa database...`,
+        `Menampilkan ${allFilms.length} judul tersimpan. Memeriksa database...`
       );
     } catch (error) {
-      console.warn("Cache CINOVA rusak", error);
+      console.warn("Cache CINOVA rusak:", error);
     }
   }
+
   try {
-    const manifest = await fetchJson("index.json");
-    if (!manifest || !Array.isArray(manifest.databases))
-      throw new Error("index.json harus memiliki array databases.");
-    const results = await Promise.allSettled(manifest.databases.map(fetchJson));
+    let databases = ["films.json"];
+
+    try {
+      const manifest = await fetchJson("index.json");
+
+      if (
+        manifest &&
+        Array.isArray(manifest.databases) &&
+        manifest.databases.length > 0
+      ) {
+        databases = manifest.databases;
+      }
+    } catch (error) {
+      console.warn("Manifest tidak tersedia, menggunakan films.json", error);
+    }
+
+    const results = await Promise.allSettled(
+      databases.map(fetchJson)
+    );
+
     const combined = [];
     const failed = [];
+
     results.forEach((result, index) => {
-      if (result.status === "fulfilled" && Array.isArray(result.value))
+      if (
+        result.status === "fulfilled" &&
+        Array.isArray(result.value)
+      ) {
         combined.push(...result.value);
-      else failed.push(manifest.databases[index]);
+      } else {
+        failed.push(databases[index]);
+      }
     });
+
     const unique = new Map();
-    combined.filter(isValidItem).forEach((item) => {
-      if (!unique.has(itemKey(item))) unique.set(itemKey(item), item);
+
+    combined.filter(isValidItem).forEach(item => {
+      const key = itemKey(item);
+
+      if (!unique.has(key)) {
+        unique.set(key, item);
+      }
     });
-    if (!unique.size && failed.length)
-      throw new Error("Semua database gagal dimuat.");
+
     const items = [...unique.values()];
-    localStorage.setItem(CACHE_KEY, JSON.stringify(items));
-    displayItems(items, "online");
-    setStatus(
-      `Database aktif • ${items.length} judul dari ${manifest.databases.length} file${failed.length ? ` • gagal: ${failed.join(", ")}` : ""}.`,
+
+    if (!items.length) {
+      throw new Error("Tidak ada data film yang valid.");
+    }
+
+    localStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify(items)
     );
+
+    displayItems(items, "online");
+
+    setStatus(
+      `Database aktif • ${items.length} judul` +
+      (failed.length
+        ? ` • gagal: ${failed.join(", ")}`
+        : "")
+    );
+
   } catch (error) {
-    console.error("Gagal memuat multi-database:", error);
-    if (allFilms.length)
+    console.error("Database CINOVA:", error);
+
+    if (allFilms.length) {
       setStatus(
-        `Mode offline • ${allFilms.length} judul tersimpan. ${error.message}`,
+        `Mode offline • ${allFilms.length} judul tersimpan.`
       );
-    else
+    } else {
       setStatus(
-        "Gagal memuat database. Periksa koneksi dan file database/index.json.",
+        "Gagal memuat film. Periksa koneksi dan films.json."
       );
+    }
+
   } finally {
     el.refresh.disabled = false;
   }
 }
+
 function displayItems(items, source) {
   if (!Array.isArray(items))
     throw new Error("Data database harus berupa array JSON.");
