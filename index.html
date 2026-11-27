@@ -98,22 +98,29 @@
     </div>
   </dialog>
 
-  <!-- PEMUTAR EMBED -->
-  <dialog id="playerDialog" class="player-dialog">
-    <button id="closePlayer" class="dialog-close"
-      type="button" aria-label="Tutup pemutar">×</button>
 
-    <div class="player-container">
-      <iframe
-        id="videoFrame"
-        src="about:blank"
-        title="Pemutar Film CINOVA"
-        allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-        allowfullscreen
-        referrerpolicy="no-referrer">
-      </iframe>
-    </div>
-  </dialog>
+<!-- PEMUTAR EMBED -->
+<dialog id="playerDialog" class="player-dialog">
+  <button
+    id="closePlayer"
+    class="dialog-close"
+    type="button"
+    aria-label="Tutup pemutar">
+    ×
+  </button>
+
+  <div class="player-container">
+    <iframe
+      id="videoFrame"
+      src="about:blank"
+      title="Pemutar Film CINOVA"
+      allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+      allowfullscreen
+      referrerpolicy="strict-origin-when-cross-origin">
+    </iframe>
+  </div>
+</dialog>
+
 </main>
 
 <nav class="bottom-nav" aria-label="Navigasi utama">
