@@ -1,22 +1,94 @@
 
-<!-- PEMUTAR EMBED -->
-<dialog id="playerDialog" class="player-dialog">
-  <button
-    id="closePlayer"
-    class="dialog-close"
-    type="button"
-    aria-label="Tutup pemutar">
-    ×
-  </button>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Test Player CINOVA</title>
 
-  <div class="player-container">
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 20px;
+    background: #111;
+    color: white;
+    font-family: Arial, sans-serif;
+}
+
+h2 {
+    margin-bottom: 8px;
+}
+
+.player {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: black;
+    margin-top: 20px;
+}
+
+iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+button {
+    padding: 12px 20px;
+    margin-top: 15px;
+    border: 0;
+    border-radius: 6px;
+    background: #e50914;
+    color: white;
+    font-size: 15px;
+}
+
+a {
+    display: inline-block;
+    margin-top: 15px;
+    color: #aaa;
+}
+</style>
+</head>
+
+<body>
+
+<h2>CINOVA TEST PLAYER</h2>
+
+<p>Film: The Odyssey (2026)</p>
+
+<div class="player">
     <iframe
-      id="videoFrame"
-      src="about:blank"
-      title="Pemutar Film CINOVA"
-      allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-      allowfullscreen
-      referrerpolicy="strict-origin-when-cross-origin">
+        id="player"
+        src="about:blank"
+        allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+        allowfullscreen>
     </iframe>
-  </div>
-</dialog>
+</div>
+
+<button onclick="playVideo()">PUTAR VIDEO</button>
+
+<br>
+
+<a
+    href="https://videonode.de/iframe3/hydrax/LS-Y8KCfqJ_R1ks9eIdjjQ"
+    target="_blank">
+    Buka URL langsung
+</a>
+
+<script>
+const videoURL =
+"https://videonode.de/iframe3/hydrax/LS-Y8KCfqJ_R1ks9eIdjjQ";
+
+function playVideo() {
+    const player = document.getElementById("player");
+
+    player.src = videoURL;
+}
+</script>
+
+</body>
+</html>
