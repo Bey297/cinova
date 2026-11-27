@@ -1,1 +1,5 @@
-
+{
+  "databases": [
+    "films.json"
+  ]
+}
