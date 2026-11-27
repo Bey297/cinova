@@ -4,91 +4,205 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Test Player CINOVA</title>
+<meta name="theme-color" content="#09090d">
 
-<style>
-* {
-    box-sizing: border-box;
-}
-
-body {
-    margin: 0;
-    padding: 20px;
-    background: #111;
-    color: white;
-    font-family: Arial, sans-serif;
-}
-
-h2 {
-    margin-bottom: 8px;
-}
-
-.player {
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    background: black;
-    margin-top: 20px;
-}
-
-iframe {
-    width: 100%;
-    height: 100%;
-    border: 0;
-}
-
-button {
-    padding: 12px 20px;
-    margin-top: 15px;
-    border: 0;
-    border-radius: 6px;
-    background: #e50914;
-    color: white;
-    font-size: 15px;
-}
-
-a {
-    display: inline-block;
-    margin-top: 15px;
-    color: #aaa;
-}
-</style>
+<title>CINOVA - Movie Streaming</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/app.js" defer></script>
 </head>
 
 <body>
 
-<h2>CINOVA TEST PLAYER</h2>
+<header>
+    <a href="#" id="brandHome" class="logo">CINOVA</a>
+    <span id="statusMessage" class="header-status">
+        Memuat database...
+    </span>
+</header>
 
-<p>Film: The Odyssey (2026)</p>
+<main>
 
-<div class="player">
-    <iframe
-        id="player"
-        src="about:blank"
-        allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-        allowfullscreen>
-    </iframe>
-</div>
+    <!-- REKOMENDASI -->
+    <section class="hero" id="recommendPoster">
+        <div class="hero-content">
+            <span class="hero-label">CINOVA ORIGINAL SELECTION</span>
 
-<button onclick="playVideo()">PUTAR VIDEO</button>
+            <h1 id="recommendTitle">
+                Memuat rekomendasi...
+            </h1>
 
-<br>
+            <div id="recommendMeta" class="muted"></div>
 
-<a
-    href="https://videonode.de/iframe3/hydrax/LS-Y8KCfqJ_R1ks9eIdjjQ"
-    target="_blank">
-    Buka URL langsung
-</a>
+            <p id="recommendDescription"></p>
 
-<script>
-const videoURL =
-"https://videonode.de/iframe3/hydrax/LS-Y8KCfqJ_R1ks9eIdjjQ";
+            <button
+                id="recommendWatch"
+                class="primary-button"
+                disabled>
+                Memuat...
+            </button>
+        </div>
+    </section>
 
-function playVideo() {
-    const player = document.getElementById("player");
+    <!-- KATALOG -->
+    <section class="section" id="catalog-section">
 
-    player.src = videoURL;
-}
-</script>
+        <div class="section-heading">
+            <h2 id="catalogTitle">Pilihan Untukmu</h2>
+
+            <span id="filmCount" class="muted">0 judul</span>
+        </div>
+
+        <input
+            type="search"
+            id="searchInput"
+            class="search-box"
+            placeholder="Cari judul film atau serial...">
+
+        <div id="typeFilters" class="filters">
+            <button class="filter-chip active" data-type="all">
+                Semua
+            </button>
+
+            <button class="filter-chip" data-type="movie">
+                Film
+            </button>
+
+            <button class="filter-chip" data-type="series">
+                Series
+            </button>
+        </div>
+
+        <div id="genreFilters" class="filters"></div>
+
+        <div id="movieGrid" class="movie-grid"></div>
+
+        <div id="emptyMessage" hidden>
+            Konten tidak ditemukan.
+        </div>
+
+        <div id="pagination"></div>
+
+        <div style="text-align:center">
+            <button
+                id="refreshButton"
+                class="secondary-button"
+                type="button">
+                ↻ Muat Ulang Database
+            </button>
+        </div>
+
+    </section>
+
+</main>
+
+<footer>
+    CINOVA © 2026
+    <br>
+    Your Movie Streaming Experience
+</footer>
+
+<!-- NAVIGASI -->
+<nav class="bottom-nav">
+    <a href="#" id="homeNav" class="active">Beranda</a>
+    <a href="#" id="filmsNav">Film</a>
+    <a href="#" id="seriesNav">Series</a>
+    <a href="#" id="favoritesNav">Favorit</a>
+</nav>
+
+<!-- DETAIL FILM -->
+<dialog id="detailDialog">
+
+    <div class="dialog-content">
+
+        <button
+            id="closeDetail"
+            class="dialog-close"
+            type="button">
+            ×
+        </button>
+
+        <span id="detailType" class="hero-label">FILM</span>
+
+        <div style="margin-top:25px; overflow:auto">
+
+            <img
+                id="detailPoster"
+                class="detail-poster"
+                src=""
+                alt="Poster film">
+
+            <h2 id="detailTitle"></h2>
+
+            <div id="detailMeta" class="detail-meta"></div>
+
+            <p
+                id="detailDescription"
+                class="detail-description">
+            </p>
+
+        </div>
+
+        <div class="detail-actions">
+
+            <button
+                id="detailWatch"
+                class="primary-button"
+                type="button">
+                ▶ Putar Film
+            </button>
+
+            <button
+                id="detailFavorite"
+                class="secondary-button"
+                type="button">
+                ♡ Favorit
+            </button>
+
+        </div>
+
+        <!-- SERIES -->
+        <div id="seriesArea" hidden>
+
+            <h3>Daftar Episode</h3>
+
+            <select id="seasonSelect"></select>
+
+            <div id="episodeList"></div>
+
+        </div>
+
+    </div>
+
+</dialog>
+
+<!-- PEMUTAR VIDEO -->
+<dialog id="playerDialog" class="player-dialog">
+
+    <button
+        id="closePlayer"
+        class="dialog-close"
+        type="button"
+        aria-label="Tutup pemutar">
+        ×
+    </button>
+
+    <div class="player-container">
+
+        <iframe
+            id="videoFrame"
+            src="about:blank"
+            title="CINOVA Video Player"
+            allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+            allowfullscreen>
+        </iframe>
+
+    </div>
+
+</dialog>
+
+<!-- JAVASCRIPT UTAMA CINOVA -->
+<script src="js/app.js" defer></script>
 
 </body>
 </html>
