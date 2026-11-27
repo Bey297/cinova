@@ -1,1059 +1,808 @@
+"use strict";
 
-/* CINOVA - Multi database, rotasi 10 menit, filter genre dan series */
+/* =====================================
+   CINOVA CONFIGURATION
+===================================== */
 
-const RAW_BASE =
-  "https://raw.githubusercontent.com/Bey297/cinova/main/database/";
+const DATABASE_URL =
+    "https://raw.githubusercontent.com/Bey297/cinova/main/database/films.json";
 
-const ROTATE_MS = 10 * 60 * 1000;
-const PAGE_SIZE = 12;
-const CACHE_KEY = "cinova_multi_cache_v2";
-const FAVORITES_KEY = "cinova_favorite_films";
+const STORAGE_KEY = "cinova_favorites_v2";
 
-let allFilms = [];
-let visibleFilms = [];
-let currentPage = 1;
-let activeView = "home";
-let activeType = "all";
+
+/* =====================================
+   APPLICATION STATE
+===================================== */
+
+let films = [];
+let filteredFilms = [];
 let activeGenre = "all";
-let recommendedFilm = null;
-let currentDetailFilm = null;
-let rotationPool = [];
-let collectionPool = [];
-let favorites = loadFavorites();
+let currentFilm = null;
+let heroFilm = null;
+
+let heroIndex = 0;
+let heroTimer = null;
+let currentPage = 1;
+const FILMS_PER_PAGE = 12;
+
+/* =====================================
+   DOM ELEMENTS
+===================================== */
 
 const $ = (id) => document.getElementById(id);
 
-const el = {
-  grid: $("movieGrid"),
-  pagination: $("pagination"),
-  count: $("filmCount"),
-  status: $("statusMessage"),
-  empty: $("emptyMessage"),
-  search: $("searchInput"),
-  refresh: $("refreshButton"),
-  recommendPoster: $("recommendPoster"),
-  recommendTitle: $("recommendTitle"),
-  recommendMeta: $("recommendMeta"),
-  recommendDescription: $("recommendDescription"),
-  recommendWatch: $("recommendWatch"),
-  catalogTitle: $("catalogTitle"),
-  dialog: $("detailDialog"),
-  detailPoster: $("detailPoster"),
-  detailTitle: $("detailTitle"),
-  detailMeta: $("detailMeta"),
-  detailDescription: $("detailDescription"),
-  detailWatch: $("detailWatch"),
-  detailFavorite: $("detailFavorite"),
+const elements = {
+    hero: document.querySelector(".hero"),
+    heroTitle: $("heroTitle"),
+    heroDescription: $("heroDescription"),
+    heroInfo: $("heroInfo"),
+    heroPlay: $("heroPlay"),
+    heroIndicators: $("heroIndicators"),
+
+    movieGrid: $("movieGrid"),
+    favoriteGrid: $("favoriteGrid"),
+    genreList: $("genreList"),
+
+    filmCount: $("filmCount"),
+    favoriteCount: $("favoriteCount"),
+
+    searchInput: $("searchInput"),
+    clearSearch: $("clearSearch"),
+    sortSelect: $("sortSelect"),
+
+    emptyState: $("emptyState"),
+
+    detailModal: $("detailModal"),
+    detailBanner: $("detailBanner"),
+    detailTitle: $("detailTitle"),
+    detailInfo: $("detailInfo"),
+    detailGenre: $("detailGenre"),
+    detailPlay: $("detailPlay"),
+    detailFavorite: $("detailFavorite"),
+
+    playerModal: $("playerModal"),
+    playerTitle: $("playerTitle"),
+    videoFrame: $("videoFrame"),
+    openSource: $("openSource"),
+    playerStatus: $("playerStatus"),
+    closePlayer: $("closePlayer"),
+
+    toast: $("toast"),
+    menuBtn: $("menuBtn")
 };
 
-function loadFavorites() {
-  try {
-    const value = JSON.parse(
-      localStorage.getItem(FAVORITES_KEY) || "[]"
-    );
 
-    return new Set(Array.isArray(value) ? value : []);
-  } catch {
-    return new Set();
-  }
+/* =====================================
+   HELPER FUNCTIONS
+===================================== */
+
+function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+    })[char]);
 }
 
-function saveFavorites() {
-  localStorage.setItem(
-    FAVORITES_KEY,
-    JSON.stringify([...favorites])
-  );
-}
-
-function text(value, fallback = "") {
-  return value === null || value === undefined
-    ? fallback
-    : String(value);
-}
-
-function contentType(item) {
-  return text(item.type).toLowerCase() === "series" ||
-    Array.isArray(item.seasons)
-    ? "series"
-    : "movie";
-}
-
-function itemKey(item) {
-  return (
-    text(item.id) ||
-    text(item.url) ||
-    `${text(item.judul)}-${text(item.tahun)}`
-  );
-}
-
-function isValidItem(item) {
-  return (
-    item &&
-    typeof item === "object" &&
-    typeof item.judul === "string" &&
-    (
-      typeof item["link-icon-besar"] === "string" ||
-      typeof item["link-icon-kecil"] === "string"
-    )
-  );
-}
-
-function splitGenres(value) {
-  if (Array.isArray(value)) {
-    return value
-      .flatMap(v => String(v).split(/[,|]/))
-      .map(v => v.trim())
-      .filter(Boolean);
-  }
-
-  return String(value || "")
-    .split(/[,|]|\s+(?=[A-Z])/)
-    .map(v => v.trim())
-    .filter(Boolean);
-}
-
-function metadata(item) {
-  return [
-    item.ratting !== undefined ? `⭐ ${item.ratting}` : "",
-    item.tahun ? text(item.tahun) : "",
-    splitGenres(item.genre).join(", "),
-  ]
-    .filter(Boolean)
-    .join(" • ");
-}
-
-function setStatus(message) {
-  el.status.textContent = message;
-}
-
-function shuffle(items) {
-  const result = items.slice();
-
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [result[i], result[j]] = [result[j], result[i]];
-  }
-
-  return result;
-}
-
-function nextFromPool(poolName, candidates, previous) {
-  let pool =
-    poolName === "hero" ? rotationPool : collectionPool;
-
-  const candidateKeys = new Set(candidates.map(itemKey));
-
-  pool = pool.filter(
-    item => candidateKeys.has(itemKey(item))
-  );
-
-  if (!pool.length) {
-    pool = shuffle(candidates);
-  }
-
-  let chosenIndex = pool.findIndex(
-    item => itemKey(item) !== itemKey(previous)
-  );
-
-  if (chosenIndex < 0) chosenIndex = 0;
-
-  const chosen = pool.splice(chosenIndex, 1)[0] || null;
-
-  if (poolName === "hero") {
-    rotationPool = pool;
-  } else {
-    collectionPool = pool;
-  }
-
-  return chosen;
-}
-
-function renderRecommendation() {
-  if (!recommendedFilm) {
-    el.recommendTitle.textContent = "Belum ada rekomendasi";
-    el.recommendMeta.textContent =
-      "Tambahkan konten ke database JSON";
-    el.recommendDescription.textContent = "";
-    el.recommendPoster.style.backgroundImage = "";
-    el.recommendWatch.disabled = true;
-    return;
-  }
-
-  el.recommendTitle.textContent = recommendedFilm.judul;
-  el.recommendMeta.textContent = metadata(recommendedFilm);
-
-  el.recommendDescription.textContent = text(
-    recommendedFilm.deskripsi,
-    "Pilihan tontonan CINOVA."
-  );
-
-  const poster =
-    recommendedFilm["link-icon-besar"] ||
-    recommendedFilm["link-icon-kecil"];
-
-  el.recommendPoster.style.backgroundImage =
-    `url("${poster}")`;
-
-  el.recommendWatch.disabled = false;
-
-  el.recommendWatch.textContent =
-    contentType(recommendedFilm) === "series"
-      ? "▤ Lihat Series"
-      : "▶ Lihat Film";
-
-  el.recommendWatch.onclick = () =>
-    openDetails(recommendedFilm);
-}
-
-function rotateHome() {
-  if (!allFilms.length) return;
-
-  const previousHero = recommendedFilm;
-
-  recommendedFilm = nextFromPool(
-    "hero",
-    allFilms,
-    previousHero
-  );
-
-  renderRecommendation();
-
-  collectionPool = shuffle(
-    allFilms.filter(
-      item => itemKey(item) !== itemKey(recommendedFilm)
-    )
-  );
-
-  if (activeView === "home") {
-    applyFilters();
-  }
-}
-
-/* ==========================================
-   PEMUTAR VIDEO EMBED
-========================================== */
-
-function openWatch(url) {
-  if (typeof url !== "string" || !url.trim()) {
-    setStatus("Tautan video belum tersedia.");
-    return;
-  }
-
-  const playerDialog = $("playerDialog");
-  const videoFrame = $("videoFrame");
-
-  if (!playerDialog || !videoFrame) {
-    setStatus("Elemen pemutar video tidak ditemukan.");
-    return;
-  }
-
-  let parsedUrl;
-
-  try {
-    parsedUrl = new URL(url.trim());
-
-    if (!["https:", "http:"].includes(parsedUrl.protocol)) {
-      throw new Error("Protokol URL tidak valid");
-    }
-  } catch (error) {
-    console.error("URL video:", error);
-    setStatus("Tautan video tidak valid.");
-    return;
-  }
-
-  try {
-    // Tutup detail film jika masih terbuka
-    if (el.dialog && el.dialog.open) {
-      el.dialog.close();
-    }
-
-    // Bersihkan URL sebelumnya
-    videoFrame.src = "about:blank";
-
-    // Buka dialog pemutar
-    if (!playerDialog.open) {
-      playerDialog.showModal();
-    }
-
-    // Muat URL film yang dipilih
-    videoFrame.src = parsedUrl.href;
-
-    console.log("CINOVA Player:", parsedUrl.href);
-
-  } catch (error) {
-    console.error("Kesalahan pemutar:", error);
-    setStatus("Gagal membuka pemutar video.");
-  }
-}
-
-function closePlayer() {
-  const playerDialog = $("playerDialog");
-  const videoFrame = $("videoFrame");
-
-  if (videoFrame) {
-    videoFrame.src = "about:blank";
-  }
-
-  if (playerDialog && playerDialog.open) {
-    playerDialog.close();
-  }
-}
-
-
-/* ==========================================
-   FAVORIT
-========================================== */
-
-function toggleFavorite(item) {
-  const key = itemKey(item);
-
-  if (favorites.has(key)) {
-    favorites.delete(key);
-  } else {
-    favorites.add(key);
-  }
-
-  saveFavorites();
-
-  if (
-    currentDetailFilm &&
-    itemKey(currentDetailFilm) === key
-  ) {
-    updateDetailFavoriteButton();
-  }
-
-  applyFilters();
-}
-
-function updateDetailFavoriteButton() {
-  if (!currentDetailFilm) return;
-
-  const saved = favorites.has(itemKey(currentDetailFilm));
-
-  el.detailFavorite.classList.toggle("saved", saved);
-
-  el.detailFavorite.textContent =
-    saved ? "♥ Tersimpan" : "♡ Favorit";
-}
-
-/* ==========================================
-   DETAIL FILM
-========================================== */
-
-function openDetails(item) {
-  currentDetailFilm = item;
-
-  el.detailPoster.src =
-    item["link-icon-besar"] ||
-    item["link-icon-kecil"] ||
-    "";
-
-  el.detailPoster.alt = item.judul;
-  el.detailTitle.textContent = item.judul;
-
-  el.detailMeta.textContent = [
-    metadata(item),
-    item.duration ? `Durasi ${item.duration}` : "",
-  ]
-    .filter(Boolean)
-    .join(" • ");
-
-  el.detailDescription.textContent =
-    text(item.deskripsi, "");
-
-  const isSeries = contentType(item) === "series";
-
-  $("detailType").textContent =
-    isSeries ? "SERIES" : "FILM";
-
-  $("seriesArea").hidden = !isSeries;
-  el.detailWatch.hidden = isSeries;
-
-  el.detailWatch.disabled =
-    typeof item.url !== "string" || !item.url.trim();
-
-  el.detailWatch.onclick = () =>
-    openWatch(item.url);
-
-  if (isSeries) {
-    renderSeasons(item);
-  }
-
-  updateDetailFavoriteButton();
-
-  if (typeof el.dialog.showModal === "function") {
-    el.dialog.showModal();
-  }
-}
-
-/* ==========================================
-   SERIES DAN EPISODE
-========================================== */
-
-function renderSeasons(series) {
-  const select = $("seasonSelect");
-  const list = $("episodeList");
-
-  select.replaceChildren();
-  list.replaceChildren();
-
-  const seasons = Array.isArray(series.seasons)
-    ? series.seasons
-    : [];
-
-  if (!seasons.length) {
-    const note = document.createElement("p");
-    note.className = "muted";
-    note.textContent = "Episode belum ditambahkan.";
-    list.appendChild(note);
-    return;
-  }
-
-  seasons.forEach((season, index) => {
-    const option = document.createElement("option");
-
-    option.value = String(index);
-    option.textContent =
-      `Season ${text(season.season, index + 1)}`;
-
-    select.appendChild(option);
-  });
-
-  const drawEpisodes = () => {
-    list.replaceChildren();
-
-    const season =
-      seasons[Number(select.value)] || seasons[0];
-
-    (season.episodes || []).forEach((episode, index) => {
-      const row = document.createElement("article");
-      row.className = "episode-row";
-
-      const info = document.createElement("div");
-
-      const title = document.createElement("strong");
-
-      title.textContent =
-        `Episode ${text(episode.episode, index + 1)}: ` +
-        `${text(episode.judul, "Tanpa judul")}`;
-
-      const duration = document.createElement("small");
-      duration.textContent = text(episode.duration, "");
-
-      info.append(title, duration);
-
-      const play = document.createElement("button");
-
-      play.className = "primary-button episode-play";
-      play.type = "button";
-      play.textContent = "▶ Putar";
-
-      play.disabled =
-        typeof episode.url !== "string" ||
-        !episode.url.trim();
-
-      play.addEventListener("click", () => {
-        openWatch(episode.url);
-      });
-
-      row.append(info, play);
-      list.appendChild(row);
-    });
-
-    if (!season.episodes || !season.episodes.length) {
-      const note = document.createElement("p");
-
-      note.className = "muted";
-      note.textContent =
-        "Belum ada episode pada season ini.";
-
-      list.appendChild(note);
-    }
-  };
-
-  select.onchange = drawEpisodes;
-  drawEpisodes();
-}
-
-/* ==========================================
-   TAMPILAN FILM
-========================================== */
-
-function renderMovies() {
-  const totalPages = Math.max(
-    1,
-    Math.ceil(visibleFilms.length / PAGE_SIZE)
-  );
-
-  currentPage = Math.min(currentPage, totalPages);
-
-  const pageItems = visibleFilms.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
-  );
-
-  el.grid.replaceChildren();
-
-  pageItems.forEach(item => {
-    const card = document.createElement("article");
-    card.className = "movie-card";
-
-    const image = document.createElement("img");
-
-    image.className = "movie-poster";
-
-    image.src =
-      item["link-icon-kecil"] ||
-      item["link-icon-besar"] ||
-      "";
-
-    image.alt = item.judul;
-    image.loading = "lazy";
-
-    image.addEventListener("click", () => {
-      openDetails(item);
-    });
-
-    image.onerror = () => {
-      image.removeAttribute("src");
-      image.alt = "Poster tidak tersedia";
-    };
-
-    const favorite = document.createElement("button");
-
-    favorite.type = "button";
-    favorite.className = "movie-favorite";
-
-    const saved = favorites.has(itemKey(item));
-
-    favorite.classList.toggle("saved", saved);
-    favorite.textContent = saved ? "♥" : "♡";
-
-    favorite.setAttribute(
-      "aria-label",
-      saved ? "Hapus favorit" : "Tambah favorit"
-    );
-
-    favorite.addEventListener("click", event => {
-      event.stopPropagation();
-      toggleFavorite(item);
-    });
-
-    const title = document.createElement("h3");
-
-    title.className = "movie-title";
-    title.textContent = item.judul;
-
-    title.addEventListener("click", () => {
-      openDetails(item);
-    });
-
-    const meta = document.createElement("div");
-
-    meta.className = "movie-meta";
-
-    meta.textContent = [
-      contentType(item) === "series"
-        ? "Series"
-        : text(item.tahun),
-      item.ratting !== undefined
-        ? `⭐ ${item.ratting}`
-        : "",
-    ]
-      .filter(Boolean)
-      .join(" • ");
-
-    card.append(image, favorite, title, meta);
-    el.grid.appendChild(card);
-  });
-
-  el.count.textContent = `${visibleFilms.length} judul`;
-
-  el.empty.hidden = visibleFilms.length !== 0;
-
-  el.empty.textContent =
-    activeView === "favorites"
-      ? "Belum ada favorit."
-      : "Konten tidak ditemukan.";
-
-  renderPagination(totalPages);
-}
-
-/* ==========================================
-   PAGINATION
-========================================== */
-
-function renderPagination(totalPages) {
-  el.pagination.replaceChildren();
-
-  if (visibleFilms.length <= PAGE_SIZE) return;
-
-  const add = (label, page, disabled, active = false) => {
-    const button = document.createElement("button");
-
-    button.type = "button";
-    button.className = "page-button";
-    button.textContent = label;
-    button.disabled = disabled;
-
-    if (active) {
-      button.classList.add("active");
-    }
-
-    button.addEventListener("click", () => {
-      currentPage = page;
-      renderMovies();
-
-      $("catalog-section").scrollIntoView({
-        behavior: "smooth",
-      });
-    });
-
-    el.pagination.appendChild(button);
-  };
-
-  add("‹", currentPage - 1, currentPage === 1);
-
-  const first = Math.max(
-    1,
-    Math.min(currentPage - 2, totalPages - 4)
-  );
-
-  const last = Math.min(totalPages, first + 4);
-
-  for (let page = first; page <= last; page++) {
-    add(
-      String(page),
-      page,
-      false,
-      page === currentPage
-    );
-  }
-
-  add("›", currentPage + 1, currentPage === totalPages);
-}
-
-/* ==========================================
-   FILTER GENRE
-========================================== */
-
-function renderGenreFilters() {
-  const container = $("genreFilters");
-
-  container.replaceChildren();
-
-  const genres = [
-    ...new Set(
-      allFilms.flatMap(item => splitGenres(item.genre))
-    ),
-  ].sort((a, b) => a.localeCompare(b, "id"));
-
-  const choices = [
-    { name: "Semua genre", value: "all" },
-    ...genres.map(name => ({ name, value: name })),
-  ];
-
-  choices.forEach(choice => {
-    const button = document.createElement("button");
-
-    button.type = "button";
-    button.className = "filter-chip";
-    button.textContent = choice.name;
-
-    button.classList.toggle(
-      "active",
-      activeGenre.toLowerCase() ===
-        choice.value.toLowerCase()
-    );
-
-    button.addEventListener("click", () => {
-      activeGenre = choice.value;
-      renderGenreFilters();
-      applyFilters();
-    });
-
-    container.appendChild(button);
-  });
-}
-
-/* ==========================================
-   FILTER DATA
-========================================== */
-
-function applyFilters() {
-  const keyword =
-    el.search.value.trim().toLocaleLowerCase("id");
-
-  visibleFilms = allFilms.filter(item => {
-    const matchesView =
-      activeView !== "favorites" ||
-      favorites.has(itemKey(item));
-
-    const matchesType =
-      activeType === "all" ||
-      contentType(item) === activeType;
-
-    const matchesGenre =
-      activeGenre === "all" ||
-      splitGenres(item.genre).some(
-        g =>
-          g.toLocaleLowerCase("id") ===
-          activeGenre.toLocaleLowerCase("id")
-      );
-
-    const searchable =
-      `${text(item.judul)} ${splitGenres(item.genre).join(" ")}`
-        .toLocaleLowerCase("id");
-
-    return (
-      matchesView &&
-      matchesType &&
-      matchesGenre &&
-      searchable.includes(keyword)
-    );
-  });
-
-  if (
-    activeView === "home" &&
-    !keyword &&
-    activeGenre === "all" &&
-    activeType === "all"
-  ) {
-    const currentOrder = collectionPool.length
-      ? collectionPool
-      : shuffle(allFilms);
-
-    const seen = new Set();
-
-    visibleFilms = currentOrder.filter(item => {
-      const key = itemKey(item);
-
-      if (seen.has(key)) return false;
-
-      seen.add(key);
-      return true;
-    });
-
-    allFilms.forEach(item => {
-      if (!seen.has(itemKey(item))) {
-        visibleFilms.push(item);
-      }
-    });
-  }
-
-  currentPage = 1;
-  renderMovies();
-}
-
-/* ==========================================
-   NAVIGASI
-========================================== */
-
-function setView(view) {
-  activeView = view;
-
-  document.querySelectorAll(".bottom-nav a").forEach(link => {
-    link.classList.remove("active");
-    link.removeAttribute("aria-current");
-  });
-
-  const id =
-    view === "home"
-      ? "homeNav"
-      : view === "films"
-        ? "filmsNav"
-        : view === "series"
-          ? "seriesNav"
-          : "favoritesNav";
-
-  const activeLink = $(id);
-
-  if (activeLink) {
-    activeLink.classList.add("active");
-    activeLink.setAttribute("aria-current", "page");
-  }
-
-  activeType =
-    view === "films"
-      ? "movie"
-      : view === "series"
-        ? "series"
-        : "all";
-
-  if (view === "favorites") {
-    activeType = "all";
-  }
-
-  document
-    .querySelectorAll("#typeFilters [data-type]")
-    .forEach(button => {
-      button.classList.toggle(
-        "active",
-        button.dataset.type === activeType
-      );
-    });
-
-  el.catalogTitle.textContent =
-    view === "favorites"
-      ? "Favorit"
-      : view === "series"
-        ? "Semua Series"
-        : view === "films"
-          ? "Semua Film"
-          : "Pilihan Untukmu";
-
-  el.search.placeholder =
-    view === "favorites"
-      ? "Cari favorit..."
-      : "Cari judul film atau serial...";
-
-  applyFilters();
-
-  if (view !== "home") {
-    $("catalog-section").scrollIntoView({
-      behavior: "smooth",
-    });
-  } else {
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
-  }
-}
-
-/* ==========================================
-   DATABASE JSON
-========================================== */
-
-async function fetchJson(path) {
-  const response = await fetch(
-    RAW_BASE + encodeURIComponent(path),
-    { cache: "no-store" }
-  );
-
-  if (!response.ok) {
-    throw new Error(`${path}: HTTP ${response.status}`);
-  }
-
-  return response.json();
-}
-
-async function loadDatabases() {
-  el.refresh.disabled = true;
-
-  const cached = localStorage.getItem(CACHE_KEY);
-
-  if (cached) {
+function validURL(value) {
     try {
-      displayItems(JSON.parse(cached), "cache");
+        const url = new URL(value);
 
-      setStatus(
-        `Menampilkan ${allFilms.length} judul tersimpan. Memeriksa database...`
-      );
-    } catch (error) {
-      console.warn("Cache CINOVA rusak:", error);
+        if (url.protocol !== "https:" && url.protocol !== "http:") {
+            return "";
+        }
+
+        return url.href;
+    } catch {
+        return "";
     }
-  }
+}
 
-  try {
-    let databases = ["films.json"];
+function getYear(film) {
+    return String(film.tahun ?? "-");
+}
 
+function getRating(film) {
+    const rating = Number(film.ratting);
+
+    return Number.isFinite(rating) ? rating.toFixed(1) : "-";
+}
+
+function getGenres(film) {
+    const raw = String(film.genre || "");
+
+    return raw
+        .split(/[,|]/)
+        .flatMap(item => item.trim().split(/\s+/))
+        .filter(Boolean);
+}
+
+function getFavoriteIds() {
     try {
-      const manifest = await fetchJson("index.json");
+        const saved = JSON.parse(
+            localStorage.getItem(STORAGE_KEY) || "[]"
+        );
 
-      if (
-        manifest &&
-        Array.isArray(manifest.databases) &&
-        manifest.databases.length > 0
-      ) {
-        databases = manifest.databases;
-      }
-    } catch (error) {
-      console.warn(
-        "Manifest tidak tersedia, menggunakan films.json",
-        error
-      );
+        return Array.isArray(saved) ? saved : [];
+    } catch {
+        return [];
     }
-
-    const results = await Promise.allSettled(
-      databases.map(fetchJson)
-    );
-
-    const combined = [];
-    const failed = [];
-
-    results.forEach((result, index) => {
-      if (
-        result.status === "fulfilled" &&
-        Array.isArray(result.value)
-      ) {
-        combined.push(...result.value);
-      } else {
-        failed.push(databases[index]);
-      }
-    });
-
-    const unique = new Map();
-
-    combined.filter(isValidItem).forEach(item => {
-      const key = itemKey(item);
-
-      if (!unique.has(key)) {
-        unique.set(key, item);
-      }
-    });
-
-    const items = [...unique.values()];
-
-    if (!items.length) {
-      throw new Error("Tidak ada data film yang valid.");
-    }
-
-    localStorage.setItem(
-      CACHE_KEY,
-      JSON.stringify(items)
-    );
-
-    displayItems(items, "online");
-
-    setStatus(
-      `Database aktif • ${items.length} judul` +
-      (
-        failed.length
-          ? ` • gagal: ${failed.join(", ")}`
-          : ""
-      )
-    );
-
-  } catch (error) {
-    console.error("Database CINOVA:", error);
-
-    if (allFilms.length) {
-      setStatus(
-        `Mode offline • ${allFilms.length} judul tersimpan.`
-      );
-    } else {
-      setStatus(
-        "Gagal memuat film. Periksa koneksi dan films.json."
-      );
-    }
-
-  } finally {
-    el.refresh.disabled = false;
-  }
 }
 
-function displayItems(items, source) {
-  if (!Array.isArray(items)) {
-    throw new Error("Data database harus berupa array JSON.");
-  }
-
-  allFilms = items.filter(isValidItem);
-
-  rotationPool = shuffle(allFilms);
-  collectionPool = shuffle(allFilms);
-
-  recommendedFilm = null;
-
-  rotateHome();
-  renderGenreFilters();
-  applyFilters();
-
-  if (source === "cache") {
-    setStatus(
-      `Mode cache • ${allFilms.length} judul tersimpan.`
-    );
-  }
+function saveFavorites(ids) {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
+    } catch {
+        showToast("Penyimpanan favorit tidak tersedia.");
+    }
 }
 
-/* ==========================================
-   EVENT LISTENER
-========================================== */
+function isFavorite(film) {
+    return getFavoriteIds().includes(film.url);
+}
 
-el.search.addEventListener("input", applyFilters);
+function showToast(message) {
+    elements.toast.textContent = message;
+    elements.toast.classList.add("show");
 
-el.refresh.addEventListener("click", loadDatabases);
+    clearTimeout(showToast.timer);
 
-$("brandHome").addEventListener("click", event => {
-  event.preventDefault();
-  setView("home");
-});
+    showToast.timer = setTimeout(() => {
+        elements.toast.classList.remove("show");
+    }, 2300);
+}
 
-$("homeNav").addEventListener("click", event => {
-  event.preventDefault();
-  setView("home");
-});
 
-$("filmsNav").addEventListener("click", event => {
-  event.preventDefault();
-  setView("films");
-});
+/* =====================================
+   LOAD DATABASE
+===================================== */
 
-$("seriesNav").addEventListener("click", event => {
-  event.preventDefault();
-  setView("series");
-});
-
-$("favoritesNav").addEventListener("click", event => {
-  event.preventDefault();
-  setView("favorites");
-});
-
-document
-  .querySelectorAll("#typeFilters [data-type]")
-  .forEach(button => {
-    button.addEventListener("click", () => {
-      activeType = button.dataset.type;
-
-      document
-        .querySelectorAll("#typeFilters [data-type]")
-        .forEach(item => {
-          item.classList.toggle(
-            "active",
-            item === button
-          );
+async function loadFilms() {
+    try {
+        const response = await fetch(DATABASE_URL, {
+            cache: "no-store"
         });
 
-      applyFilters();
+        if (!response.ok) {
+            throw new Error("HTTP " + response.status);
+        }
+
+        const data = await response.json();
+
+        if (!Array.isArray(data)) {
+            throw new Error("Format database bukan array JSON.");
+        }
+
+        films = data.filter(film => {
+            return film &&
+                typeof film === "object" &&
+                validURL(film.url) &&
+                film.judul;
+        });
+
+        if (films.length === 0) {
+            throw new Error("Database belum memiliki film valid.");
+        }
+
+        initializeApp();
+
+    } catch (error) {
+        console.error("CINOVA DATABASE ERROR:", error);
+
+        elements.movieGrid.innerHTML = `
+            <div class="loading">
+                <h3>Database gagal dimuat</h3>
+                <p>${escapeHTML(error.message)}</p>
+                <button class="primary-btn" onclick="loadFilms()">
+                    Coba Lagi
+                </button>
+            </div>
+        `;
+
+        elements.filmCount.textContent = "Gagal memuat";
+    }
+}
+
+
+/* =====================================
+   INITIALIZE
+===================================== */
+
+
+function initializeApp() {
+    // Acak urutan film setiap website dibuka
+    films = shuffleFilms(films);
+
+    buildGenres();
+
+    filteredFilms = [...films];
+
+    renderMovies();
+    renderFavorites();
+    setupHero();
+
+    elements.filmCount.textContent =
+        films.length + " Film";
+
+    console.log("CINOVA berhasil dimuat:", films.length, "film");
+}
+
+
+
+function shuffleFilms(array) {
+    const result = [...array];
+
+    for (let i = result.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+
+        [result[i], result[j]] = [result[j], result[i]];
+    }
+
+    return result;
+}
+
+
+/* =====================================
+   GENRE FILTER
+===================================== */
+
+function buildGenres() {
+    const genres = new Set();
+
+    films.forEach(film => {
+        getGenres(film).forEach(genre => {
+            genres.add(genre);
+        });
     });
-  });
 
-$("closeDetail").addEventListener("click", () => {
-  el.dialog.close();
+    const sortedGenres = [...genres].sort();
+
+    elements.genreList.innerHTML = `
+        <button class="genre-btn active" data-genre="all">
+            Semua
+        </button>
+    `;
+
+    sortedGenres.forEach(genre => {
+        const button = document.createElement("button");
+
+        button.className = "genre-btn";
+        button.dataset.genre = genre;
+        button.textContent = genre;
+
+        elements.genreList.appendChild(button);
+    });
+}
+
+function filterByGenre(genre) {
+    activeGenre = genre;
+
+    document.querySelectorAll(".genre-btn").forEach(button => {
+        button.classList.toggle(
+            "active",
+            button.dataset.genre === genre
+        );
+    });
+
+    applyFilters();
+  currentPage = 1;
+}
+
+
+/* =====================================
+   SEARCH AND SORT
+===================================== */
+
+function applyFilters() {
+    const keyword = elements.searchInput.value
+        .trim()
+        .toLowerCase();
+
+    filteredFilms = films.filter(film => {
+        const title = String(film.judul || "").toLowerCase();
+
+        const genreList = getGenres(film)
+            .join(" ")
+            .toLowerCase();
+
+        const matchSearch =
+            title.includes(keyword) ||
+            genreList.includes(keyword);
+
+        const matchGenre =
+            activeGenre === "all" ||
+            getGenres(film).some(genre =>
+                genre.toLowerCase() === activeGenre.toLowerCase()
+            );
+
+        return matchSearch && matchGenre;
+    });
+
+    sortFilms();
+    currentPage = 1;
+    renderMovies();
+}
+
+function sortFilms() {
+    const mode = elements.sortSelect.value;
+
+    if (mode === "latest") {
+        filteredFilms.sort((a, b) =>
+            Number(b.tahun) - Number(a.tahun)
+        );
+    }
+
+    if (mode === "oldest") {
+        filteredFilms.sort((a, b) =>
+            Number(a.tahun) - Number(b.tahun)
+        );
+    }
+
+    if (mode === "rating") {
+        filteredFilms.sort((a, b) =>
+            Number(b.ratting) - Number(a.ratting)
+        );
+    }
+
+    if (mode === "az") {
+        filteredFilms.sort((a, b) =>
+            String(a.judul).localeCompare(String(b.judul))
+        );
+    }
+}
+
+
+/* =====================================
+   MOVIE CARD
+===================================== */
+
+
+function createMovieCard(film) {
+    const favorite = isFavorite(film);
+    const poster = validURL(film["link-icon-kecil"]);
+
+    const genres = getGenres(film)
+        .map(genre => escapeHTML(genre))
+        .join(" • ");
+
+    return `
+        <article class="movie-card"
+            data-action="detail"
+            data-url="${escapeHTML(film.url)}">
+
+            <div class="poster-wrap">
+
+                <img
+                    src="${escapeHTML(poster)}"
+                    alt="${escapeHTML(film.judul)}"
+                    loading="lazy"
+                    onerror="this.style.opacity='.15'"
+                >
+
+                <span class="rating">
+                    ★ ${getRating(film)}
+                </span>
+
+                <button
+                    class="favorite-btn ${favorite ? "active" : ""}"
+                    data-action="favorite"
+                    data-url="${escapeHTML(film.url)}">
+                    ${favorite ? "♥" : "♡"}
+                </button>
+
+                <div class="poster-overlay"></div>
+            </div>
+
+            <h3 class="movie-title">
+                ${escapeHTML(film.judul)}
+            </h3>
+
+            <p class="movie-genre">
+                ${genres || "Genre tidak tersedia"}
+            </p>
+
+            <p class="movie-meta">
+                ${escapeHTML(getYear(film))}
+                • ${escapeHTML(film.duration || "-")}
+            </p>
+
+        </article>
+    `;
+}
+
+/* =====================================
+   RENDER MOVIES
+===================================== */
+
+
+function renderMovies() {
+    const totalFilms = filteredFilms.length;
+
+    const totalPages = Math.ceil(
+        totalFilms / FILMS_PER_PAGE
+    );
+
+    if (currentPage > totalPages) {
+        currentPage = Math.max(1, totalPages);
+    }
+
+    const startIndex =
+        (currentPage - 1) * FILMS_PER_PAGE;
+
+    const endIndex =
+        startIndex + FILMS_PER_PAGE;
+
+    const pageFilms = filteredFilms.slice(
+        startIndex,
+        endIndex
+    );
+
+    elements.filmCount.textContent =
+        totalFilms + " Film";
+
+    elements.movieGrid.innerHTML = "";
+
+    elements.emptyState.hidden = totalFilms !== 0;
+
+    if (totalFilms === 0) {
+        $("pagination").innerHTML = "";
+        return;
+    }
+
+    elements.movieGrid.innerHTML =
+        pageFilms.map(createMovieCard).join("");
+
+    renderPagination(totalPages);
+}
+
+
+function renderPagination(totalPages) {
+    const container = $("pagination");
+
+    if (totalPages <= 1) {
+        container.innerHTML = "";
+        return;
+    }
+
+    let html = `
+        <button class="page-btn"
+            data-page="${currentPage - 1}"
+            ${currentPage === 1 ? "disabled" : ""}>
+            ‹
+        </button>
+    `;
+
+    for (let i = 1; i <= totalPages; i++) {
+        html += `
+            <button
+                class="page-btn ${i === currentPage ? "active" : ""}"
+                data-page="${i}">
+                ${i}
+            </button>
+        `;
+    }
+
+    html += `
+        <button class="page-btn"
+            data-page="${currentPage + 1}"
+            ${currentPage === totalPages ? "disabled" : ""}>
+            ›
+        </button>
+
+        <span class="page-info">
+            ${currentPage} / ${totalPages}
+        </span>
+    `;
+
+    container.innerHTML = html;
+}
+
+$("pagination").addEventListener("click", event => {
+    const button = event.target.closest("[data-page]");
+
+    if (!button || button.disabled) return;
+
+    currentPage = Number(button.dataset.page);
+
+    renderMovies();
+
+    document.getElementById("movies").scrollIntoView({
+        behavior: "smooth"
+    });
 });
 
-el.detailFavorite.addEventListener("click", () => {
-  if (currentDetailFilm) {
-    toggleFavorite(currentDetailFilm);
-  }
+
+/* =====================================
+   FAVORITES
+===================================== */
+
+function toggleFavorite(url) {
+    const film = films.find(item => item.url === url);
+
+    if (!film) return;
+
+    let favorites = getFavoriteIds();
+
+    if (favorites.includes(url)) {
+        favorites = favorites.filter(item => item !== url);
+        showToast("Dihapus dari favorit");
+    } else {
+        favorites.push(url);
+        showToast("Ditambahkan ke favorit");
+    }
+
+    saveFavorites(favorites);
+
+    renderMovies();
+    renderFavorites();
+    updateDetailFavorite();
+}
+
+function renderFavorites() {
+    const ids = getFavoriteIds();
+
+    const favorites = films.filter(film =>
+        ids.includes(film.url)
+    );
+
+    elements.favoriteCount.textContent =
+        favorites.length + " Film";
+
+    if (favorites.length === 0) {
+        elements.favoriteGrid.innerHTML = `
+            <p class="favorite-empty">
+                Belum ada film favorit.
+            </p>
+        `;
+
+        return;
+    }
+
+    elements.favoriteGrid.innerHTML =
+        favorites.map(createMovieCard).join("");
+}
+
+
+/* =====================================
+   MOVIE DETAIL
+===================================== */
+
+function openDetail(url) {
+    const film = films.find(item => item.url === url);
+
+    if (!film) return;
+
+    currentFilm = film;
+
+    const banner = validURL(film["link-icon-besar"]);
+
+    elements.detailBanner.style.backgroundImage =
+        banner ? `url("${banner}")` : "none";
+
+    elements.detailTitle.textContent = film.judul;
+
+    elements.detailInfo.textContent =
+        `${getYear(film)} • ${film.duration || "-"} • ★ ${getRating(film)}`;
+
+    elements.detailGenre.textContent =
+        "Genre: " + getGenres(film).join(", ");
+
+    updateDetailFavorite();
+
+    elements.detailModal.classList.add("show");
+
+    document.body.style.overflow = "hidden";
+}
+
+function closeDetail() {
+    elements.detailModal.classList.remove("show");
+
+    document.body.style.overflow = "";
+}
+
+function updateDetailFavorite() {
+    if (!currentFilm) return;
+
+    const favorite = isFavorite(currentFilm);
+
+    elements.detailFavorite.textContent =
+        favorite ? "♥ Hapus Favorit" : "♡ Tambah Favorit";
+}
+
+
+/* =====================================
+   VIDEO PLAYER
+===================================== */
+
+function playFilm(film) {
+    if (!film) return;
+
+    const videoURL = validURL(film.url);
+
+    if (!videoURL) {
+        showToast("URL video tidak valid.");
+        return;
+    }
+
+    window.open(videoURL, "_blank");
+}
+
+
+function closePlayer() {
+    elements.videoFrame.src = "about:blank";
+
+    elements.playerModal.classList.remove("show");
+
+    document.body.style.overflow = "";
+}
+
+
+/* =====================================
+   HERO BANNER
+===================================== */
+
+function setupHero() {
+    if (films.length === 0) return;
+
+    const shuffled = [...films].sort(() => Math.random() - 0.5);
+
+    const heroFilms = shuffled.slice(0, Math.min(5, shuffled.length));
+
+    function showHero(index) {
+        heroFilm = heroFilms[index];
+
+        if (!heroFilm) return;
+
+        const banner = validURL(heroFilm["link-icon-besar"]) ||
+            validURL(heroFilm["link-icon-kecil"]);
+
+        elements.hero.style.backgroundImage = banner
+            ? `url("${banner}")`
+            : "none";
+
+        elements.heroTitle.textContent = heroFilm.judul;
+
+        elements.heroDescription.textContent =
+            "Nikmati " + heroFilm.judul + " bersama CINOVA.";
+
+        elements.heroInfo.textContent =
+            `${getYear(heroFilm)} • ${heroFilm.duration || "-"} • ★ ${getRating(heroFilm)}`;
+
+        elements.heroIndicators.innerHTML = heroFilms
+            .map((film, i) => `
+                <button
+                    class="${i === index ? "active" : ""}"
+                    data-hero="${i}"
+                    aria-label="Banner ${i + 1}">
+                </button>
+            `)
+            .join("");
+    }
+
+    function nextHero() {
+        heroIndex = (heroIndex + 1) % heroFilms.length;
+        showHero(heroIndex);
+    }
+
+    showHero(heroIndex);
+
+    clearInterval(heroTimer);
+
+    if (heroFilms.length > 1) {
+        heroTimer = setInterval(nextHero, 8000);
+    }
+
+    elements.heroIndicators.onclick = event => {
+        const button = event.target.closest("[data-hero]");
+
+        if (!button) return;
+
+        heroIndex = Number(button.dataset.hero);
+
+        showHero(heroIndex);
+    };
+
+    elements.heroPlay.onclick = () => {
+        playFilm(heroFilm);
+    };
+}
+
+
+/* =====================================
+   EVENT LISTENERS
+===================================== */
+
+elements.genreList.addEventListener("click", event => {
+    const button = event.target.closest("[data-genre]");
+
+    if (!button) return;
+
+    filterByGenre(button.dataset.genre);
 });
 
-el.dialog.addEventListener("click", event => {
-  if (event.target === el.dialog) {
-    el.dialog.close();
-  }
+function handleMovieGrid(event) {
+    const favoriteButton = event.target.closest(
+        '[data-action="favorite"]'
+    );
+
+    if (favoriteButton) {
+        event.stopPropagation();
+
+        toggleFavorite(favoriteButton.dataset.url);
+        return;
+    }
+
+    const card = event.target.closest(
+        '[data-action="detail"]'
+    );
+
+    if (card) {
+        openDetail(card.dataset.url);
+    }
+}
+
+elements.movieGrid.addEventListener("click", handleMovieGrid);
+
+elements.favoriteGrid.addEventListener("click", handleMovieGrid);
+
+elements.searchInput.addEventListener("input", () => {
+    elements.clearSearch.classList.toggle(
+        "visible",
+        elements.searchInput.value.length > 0
+    );
+
+    applyFilters();
 });
 
-/* TUTUP PLAYER DAN HENTIKAN IFRAME */
-
-$("closePlayer").addEventListener("click", closePlayer);
-
-$("playerDialog").addEventListener("click", event => {
-  if (event.target === $("playerDialog")) {
-    closePlayer();
-  }
+elements.clearSearch.addEventListener("click", () => {
+    elements.searchInput.value = "";
+    elements.clearSearch.classList.remove("visible");
+    applyFilters();
 });
 
-$("playerDialog").addEventListener("close", () => {
-  $("videoFrame").src = "about:blank";
+elements.sortSelect.addEventListener("change", applyFilters);
+
+elements.detailPlay.addEventListener("click", () => {
+    playFilm(currentFilm);
 });
 
-/* ==========================================
-   ROTASI REKOMENDASI
-========================================== */
+elements.detailFavorite.addEventListener("click", () => {
+    if (currentFilm) {
+        toggleFavorite(currentFilm.url);
+    }
+});
 
-setInterval(rotateHome, ROTATE_MS);
+elements.closePlayer.addEventListener("click", closePlayer);
 
-/* MULAI CINOVA */
+document.querySelectorAll('[data-close="detail"]').forEach(button => {
+    button.addEventListener("click", closeDetail);
+});
 
-loadDatabases();
+elements.menuBtn.addEventListener("click", () => {
+    document.querySelector(".nav-links").classList.toggle("open");
+});
+
+document.querySelectorAll(".nav-links a").forEach(link => {
+    link.addEventListener("click", () => {
+        document.querySelector(".nav-links").classList.remove("open");
+    });
+});
+
+document.addEventListener("keydown", event => {
+    if (event.key === "Escape") {
+        if (elements.playerModal.classList.contains("show")) {
+            closePlayer();
+        } else if (elements.detailModal.classList.contains("show")) {
+            closeDetail();
+        }
+    }
+});
+
+
+/* =====================================
+   START CINOVA
+===================================== */
+
+loadFilms();
