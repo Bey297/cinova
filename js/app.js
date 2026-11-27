@@ -160,28 +160,33 @@ function rotateHome() {
   if (activeView === "home") applyFilters();
 }
 
-function openWatch(url) {
-    if (!url) {
-        setStatus("Tautan video tidak tersedia.");
+function openWatch(source) {
+    const videoUrl =
+        typeof source === "string"
+            ? source
+            : source?.url;
+
+    if (!videoUrl) {
+        setStatus("Tautan video belum tersedia.");
         return;
     }
 
-    const dialog = $("playerDialog");
-    const frame = $("videoFrame");
+    const playerDialog = $("playerDialog");
+    const videoFrame = $("videoFrame");
 
-    if (!dialog || !frame) {
-        window.open(url, "_blank", "noopener,noreferrer");
+    if (!playerDialog || !videoFrame) {
+        window.open(videoUrl, "_blank");
         return;
     }
 
-    frame.src = "about:blank";
-
-    frame.src = url;
-
-    if (!dialog.open) {
-        dialog.showModal();
+    if (el.dialog && el.dialog.open) {
+        el.dialog.close();
     }
+
+    videoFrame.src = videoUrl;
+    playerDialog.showModal();
 }
+
 function toggleFavorite(item) {
   const key = itemKey(item);
   if (favorites.has(key)) favorites.delete(key);
