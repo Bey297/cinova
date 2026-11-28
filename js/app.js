@@ -805,4 +805,448 @@ document.addEventListener("keydown", event => {
    START CINOVA
 ===================================== */
 
+
+/* =====================================
+   CINOVA SERIES SYSTEM
+===================================== */
+
+const SERIES_DATABASE_URL =
+    "https://raw.githubusercontent.com/Bey297/cinova/main/database/series.json";
+
+let seriesList = [];
+let currentSeries = null;
+let currentSeason = 1;
+let filteredSeries = [];
+
+const seriesElements = {
+    grid: $("seriesGrid"),
+    count: $("seriesCount"),
+    search: $("seriesSearch"),
+    empty: $("seriesEmpty"),
+    genres: $("seriesGenreList"),
+
+    modal: $("seriesModal"),
+    banner: $("seriesBanner"),
+    title: $("seriesTitle"),
+    info: $("seriesInfo"),
+    genre: $("seriesGenre"),
+
+    seasons: $("seasonButtons"),
+    episodes: $("episodeList"),
+    episodeHeading: $("episodeHeading")
+};
+
+
+/* LOAD SERIES DATABASE */
+
+async function loadSeries() {
+    try {
+        const response = await fetch(SERIES_DATABASE_URL, {
+            cache: "no-store"
+        });
+
+        if (!response.ok) {
+            throw new Error("HTTP " + response.status);
+        }
+
+        const data = await response.json();
+
+        if (!Array.isArray(data)) {
+            throw new Error("Format database Series tidak valid.");
+        }
+
+        seriesList = data.filter(series => {
+            return series &&
+                series.id &&
+                series.judul &&
+                Array.isArray(series.seasons);
+        });
+
+        seriesList = shuffleFilms(seriesList);
+
+        filteredSeries = [...seriesList];
+
+        buildSeriesGenres();
+        renderSeries();
+
+        seriesElements.count.textContent =
+            seriesList.length + " Series";
+
+    } catch (error) {
+        console.error("CINOVA SERIES ERROR:", error);
+
+        seriesElements.grid.innerHTML = `
+            <div class="loading">
+                <h3>Series gagal dimuat</h3>
+                <p>${escapeHTML(error.message)}</p>
+            </div>
+        `;
+
+        seriesElements.count.textContent = "Gagal memuat";
+    }
+}
+
+
+/* HITUNG TOTAL EPISODE */
+
+function getTotalEpisodes(series) {
+    if (!Array.isArray(series.seasons)) return 0;
+
+    return series.seasons.reduce((total, season) => {
+        return total + (
+            Array.isArray(season.episodes)
+                ? season.episodes.length
+                : 0
+        );
+    }, 0);
+}
+
+
+/* SERIES GENRES */
+
+function buildSeriesGenres() {
+    const genres = new Set();
+
+    seriesList.forEach(series => {
+        getGenres(series).forEach(genre => {
+            genres.add(genre);
+        });
+    });
+
+    seriesElements.genres.innerHTML = `
+        <button class="genre-btn active"
+            data-series-genre="all">
+            Semua
+        </button>
+    `;
+
+    [...genres].sort().forEach(genre => {
+        seriesElements.genres.innerHTML += `
+            <button class="genre-btn"
+                data-series-genre="${escapeHTML(genre)}">
+                ${escapeHTML(genre)}
+            </button>
+        `;
+    });
+}
+
+
+/* SERIES CARD */
+
+function createSeriesCard(series) {
+    const poster = validURL(series["link-icon-kecil"]);
+
+    const totalEpisodes = getTotalEpisodes(series);
+
+    const genres = getGenres(series)
+        .map(genre => escapeHTML(genre))
+        .join(" • ");
+
+    return `
+        <article class="movie-card"
+            data-series-action="detail"
+            data-series-id="${escapeHTML(series.id)}">
+
+            <div class="poster-wrap">
+
+                <img
+                    src="${escapeHTML(poster)}"
+                    alt="${escapeHTML(series.judul)}"
+                    loading="lazy"
+                    onerror="this.style.opacity='.15'"
+                >
+
+                <span class="rating">
+                    ★ ${getRating(series)}
+                </span>
+
+                <span class="series-episode-badge">
+                    ${totalEpisodes} EPS
+                </span>
+
+                <div class="poster-overlay"></div>
+
+            </div>
+
+            <h3 class="movie-title">
+                ${escapeHTML(series.judul)}
+            </h3>
+
+            <p class="movie-genre">
+                ${genres || "Genre tidak tersedia"}
+            </p>
+
+            <p class="movie-meta">
+                ${escapeHTML(getYear(series))}
+                • ${series.seasons.length} Season
+            </p>
+
+        </article>
+    `;
+}
+
+
+/* RENDER SERIES */
+
+function renderSeries() {
+    seriesElements.count.textContent =
+        filteredSeries.length + " Series";
+
+    seriesElements.grid.innerHTML =
+        filteredSeries.map(createSeriesCard).join("");
+
+    seriesElements.empty.hidden =
+        filteredSeries.length !== 0;
+}
+
+
+/* FILTER SERIES */
+
+function filterSeries() {
+    const keyword = seriesElements.search.value
+        .trim()
+        .toLowerCase();
+
+    const activeButton =
+        seriesElements.genres.querySelector(".active");
+
+    const activeGenre = activeButton
+        ? activeButton.dataset.seriesGenre
+        : "all";
+
+    filteredSeries = seriesList.filter(series => {
+
+        const title = String(series.judul || "")
+            .toLowerCase();
+
+        const genreList = getGenres(series);
+
+        const matchSearch =
+            title.includes(keyword) ||
+            genreList.join(" ").toLowerCase().includes(keyword);
+
+        const matchGenre =
+            activeGenre === "all" ||
+            genreList.some(genre =>
+                genre.toLowerCase() === activeGenre.toLowerCase()
+            );
+
+        return matchSearch && matchGenre;
+    });
+
+    renderSeries();
+}
+
+
+/* OPEN SERIES DETAIL */
+
+function openSeriesDetail(id) {
+    const series = seriesList.find(item =>
+        String(item.id) === String(id)
+    );
+
+    if (!series) return;
+
+    currentSeries = series;
+
+    currentSeason = series.seasons.length
+        ? Number(series.seasons[0].season)
+        : 1;
+
+    const banner = validURL(series["link-icon-besar"]);
+
+    seriesElements.banner.style.backgroundImage =
+        banner ? `url("${banner}")` : "none";
+
+    seriesElements.title.textContent = series.judul;
+
+    seriesElements.info.textContent =
+        `${getYear(series)} • ${series.seasons.length} Season • ${getTotalEpisodes(series)} Episode • ★ ${getRating(series)}`;
+
+    seriesElements.genre.textContent =
+        "Genre: " + getGenres(series).join(", ");
+
+    renderSeasonButtons();
+    renderEpisodes();
+
+    seriesElements.modal.classList.add("show");
+
+    document.body.style.overflow = "hidden";
+}
+
+
+/* SEASON BUTTONS */
+
+function renderSeasonButtons() {
+    if (!currentSeries) return;
+
+    seriesElements.seasons.innerHTML =
+        currentSeries.seasons.map(season => `
+            <button
+                class="season-btn ${
+                    Number(season.season) === currentSeason
+                        ? "active"
+                        : ""
+                }"
+                data-season="${Number(season.season)}">
+
+                Season ${Number(season.season)}
+
+            </button>
+        `).join("");
+}
+
+
+/* CHANGE SEASON */
+
+function selectSeason(seasonNumber) {
+    if (!currentSeries) return;
+
+    const seasonExists = currentSeries.seasons.some(
+        season => Number(season.season) === seasonNumber
+    );
+
+    if (!seasonExists) return;
+
+    currentSeason = seasonNumber;
+
+    renderSeasonButtons();
+    renderEpisodes();
+}
+
+
+/* EPISODE LIST */
+
+function renderEpisodes() {
+    if (!currentSeries) return;
+
+    const season = currentSeries.seasons.find(
+        item => Number(item.season) === currentSeason
+    );
+
+    if (!season) {
+        seriesElements.episodes.innerHTML =
+            "<p>Episode tidak tersedia.</p>";
+        return;
+    }
+
+    const episodes = Array.isArray(season.episodes)
+        ? season.episodes
+        : [];
+
+    seriesElements.episodeHeading.textContent =
+        `Episode Season ${currentSeason}`;
+
+    if (episodes.length === 0) {
+        seriesElements.episodes.innerHTML =
+            "<p>Belum ada episode.</p>";
+        return;
+    }
+
+    seriesElements.episodes.innerHTML =
+        episodes.map(episode => `
+            <button
+                class="episode-item"
+                data-episode-url="${escapeHTML(episode.url)}"
+                ${validURL(episode.url) ? "" : "disabled"}>
+
+                <span class="episode-number">
+                    ${Number(episode.episode)}
+                </span>
+
+                <span class="episode-title">
+                    ${escapeHTML(
+                        episode.judul ||
+                        "Episode " + episode.episode
+                    )}
+                </span>
+
+                <span class="episode-play">▶</span>
+
+            </button>
+        `).join("");
+}
+
+
+/* CLOSE SERIES */
+
+function closeSeriesDetail() {
+    seriesElements.modal.classList.remove("show");
+
+    document.body.style.overflow = "";
+}
+
+
+/* SERIES EVENTS */
+
+seriesElements.grid.addEventListener("click", event => {
+    const card = event.target.closest(
+        '[data-series-action="detail"]'
+    );
+
+    if (!card) return;
+
+    openSeriesDetail(card.dataset.seriesId);
+});
+
+
+seriesElements.search.addEventListener("input", filterSeries);
+
+
+seriesElements.genres.addEventListener("click", event => {
+    const button = event.target.closest("[data-series-genre]");
+
+    if (!button) return;
+
+    seriesElements.genres
+        .querySelectorAll(".genre-btn")
+        .forEach(item => item.classList.remove("active"));
+
+    button.classList.add("active");
+
+    filterSeries();
+});
+
+
+seriesElements.seasons.addEventListener("click", event => {
+    const button = event.target.closest("[data-season]");
+
+    if (!button) return;
+
+    selectSeason(Number(button.dataset.season));
+});
+
+
+seriesElements.episodes.addEventListener("click", event => {
+    const button = event.target.closest("[data-episode-url]");
+
+    if (!button || button.disabled) return;
+
+    const episodeURL = validURL(button.dataset.episodeUrl);
+
+    if (!episodeURL) {
+        showToast("URL episode tidak valid.");
+        return;
+    }
+
+    // Memakai mekanisme pembukaan video yang sudah ada.
+    // Fungsi VIDEO PLAYER tidak diubah.
+    closeSeriesDetail();
+
+    playFilm({
+        url: episodeURL
+    });
+});
+
+
+document.querySelectorAll('[data-close="series"]')
+    .forEach(button => {
+        button.addEventListener("click", closeSeriesDetail);
+    });
+
+
+/* LOAD BOTH DATABASES */
+
 loadFilms();
+loadSeries();
+
