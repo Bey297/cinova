@@ -1185,7 +1185,7 @@ seriesElements.grid.addEventListener("click", event => {
 
     if (!card) return;
 
-    openSeriesDetail(card.dataset.seriesjudul);
+    openSeriesDetail(card.dataset.seriesJudul);
 });
 
 
