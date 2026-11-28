@@ -748,6 +748,189 @@ footer small {
 }
 
 
+
+/* =====================================
+   CINOVA SERIES DESIGN
+===================================== */
+
+/* BADGE JUMLAH EPISODE DI POSTER */
+
+.series-episode-badge {
+    position: absolute;
+    top: 9px;
+    right: 9px;
+    z-index: 2;
+
+    background: rgba(229, 9, 53, .95);
+    color: #ffffff;
+
+    padding: 5px 7px;
+    border-radius: 4px;
+
+    font-size: 10px;
+    font-weight: bold;
+    letter-spacing: .3px;
+
+    box-shadow: 0 2px 8px rgba(0,0,0,.4);
+}
+
+
+/* SERIES DETAIL */
+
+.series-detail-box {
+    max-width: 650px;
+}
+
+.season-area {
+    margin-top: 25px;
+}
+
+.season-area h3 {
+    font-size: 15px;
+    margin-bottom: 13px;
+}
+
+.season-buttons {
+    display: flex;
+    gap: 9px;
+    overflow-x: auto;
+    padding-bottom: 15px;
+    scrollbar-width: none;
+}
+
+.season-buttons::-webkit-scrollbar {
+    display: none;
+}
+
+.season-btn {
+    flex-shrink: 0;
+    padding: 10px 17px;
+
+    background: var(--surface2);
+    color: var(--muted);
+
+    border: 1px solid var(--border);
+    border-radius: 6px;
+
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.season-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+
+/* EPISODE LIST */
+
+.episode-list {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    margin-top: 12px;
+}
+
+.episode-item {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+
+    width: 100%;
+    min-height: 57px;
+
+    padding: 10px 13px;
+
+    background: var(--surface2);
+    color: white;
+
+    border: 1px solid var(--border);
+    border-radius: 7px;
+
+    text-align: left;
+    transition: .2s;
+}
+
+.episode-item:hover:not(:disabled) {
+    background: #252d40;
+    border-color: var(--primary);
+}
+
+.episode-item:disabled {
+    opacity: .4;
+    cursor: not-allowed;
+}
+
+.episode-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 32px;
+    height: 32px;
+
+    flex-shrink: 0;
+
+    background: #30394d;
+    border-radius: 5px;
+
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.episode-title {
+    flex: 1;
+    min-width: 0;
+
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.episode-play {
+    color: var(--primary);
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+
+/* SERIES EMPTY STATE */
+
+#seriesEmpty {
+    color: var(--muted);
+}
+
+@media (max-width: 767px) {
+
+    #series {
+        padding-top: 35px;
+    }
+
+    .series-detail-box {
+        max-height: 92vh;
+    }
+
+    .series-detail-box .detail-banner {
+        height: 200px;
+    }
+
+    .series-detail-box .detail-content {
+        padding: 18px 17px 25px;
+    }
+
+    .series-detail-box .detail-content h2 {
+        font-size: 23px;
+    }
+
+    .series-episode-badge {
+        top: 7px;
+        right: 7px;
+        font-size: 9px;
+        padding: 5px 6px;
+    }
+}
+
+
 /* Tampilan HP */
 
 @media (max-width: 650px) {
