@@ -105,6 +105,54 @@
 
         </section>
 
+        
+<section class="main-content" id="series">
+
+    <div class="section-heading">
+        <div>
+            <span class="section-subtitle">SERIES COLLECTION</span>
+            <h2>Jelajahi Series</h2>
+        </div>
+
+        <span class="film-count" id="seriesCount">
+            Memuat...
+        </span>
+    </div>
+
+    <div class="search-area">
+        <div class="search-box">
+            <span>⌕</span>
+            <input
+                type="search"
+                id="seriesSearch"
+                placeholder="Cari judul series..."
+                autocomplete="off"
+            >
+        </div>
+    </div>
+
+    <div class="genre-list" id="seriesGenreList">
+        <button class="genre-btn active" data-series-genre="all">
+            Semua
+        </button>
+    </div>
+
+    <div class="movie-grid" id="seriesGrid">
+        <div class="loading">
+            <div class="loader"></div>
+            <p>Memuat koleksi Series...</p>
+        </div>
+    </div>
+
+    <div class="empty-state" id="seriesEmpty" hidden>
+        <span>⌕</span>
+        <h3>Series tidak ditemukan</h3>
+        <p>Coba judul atau genre lainnya.</p>
+    </div>
+
+</section>
+
+
         <section class="main-content favorites-section" id="favorites">
 
             <div class="section-heading">
@@ -160,6 +208,45 @@
             </div>
         </div>
     </div>
+
+    
+<!-- DETAIL SERIES -->
+<div class="modal" id="seriesModal">
+
+    <div class="modal-backdrop" data-close="series"></div>
+
+    <div class="detail-box series-detail-box">
+
+        <button class="modal-close" data-close="series">×</button>
+
+        <div class="detail-banner" id="seriesBanner"></div>
+
+        <div class="detail-content">
+
+            <span class="section-subtitle">CINOVA SERIES</span>
+
+            <h2 id="seriesTitle"></h2>
+
+            <div class="detail-info" id="seriesInfo"></div>
+
+            <p id="seriesGenre"></p>
+
+            <div class="season-area">
+
+                <h3>Pilih Season</h3>
+
+                <div id="seasonButtons" class="season-buttons"></div>
+
+                <h3 id="episodeHeading">Daftar Episode</h3>
+
+                <div id="episodeList" class="episode-list"></div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
 
     <!-- VIDEO PLAYER -->
     <div class="player-modal" id="playerModal">
