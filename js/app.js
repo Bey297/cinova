@@ -857,7 +857,6 @@ async function loadSeries() {
 
         seriesList = data.filter(series => {
             return series &&
-                series.id &&
                 series.judul &&
                 Array.isArray(series.seasons);
         });
