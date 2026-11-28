@@ -945,7 +945,7 @@ function createSeriesCard(series) {
     return `
         <article class="movie-card"
             data-series-action="detail"
-            data-series-id="${escapeHTML(series.id)}">
+            data-series-judul="${escapeHTML(series.judul)}">
 
             <div class="poster-wrap">
 
