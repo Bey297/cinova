@@ -1040,9 +1040,9 @@ function filterSeries() {
 
 /* OPEN SERIES DETAIL */
 
-function openSeriesDetail(id) {
+function openSeriesDetail(judul) {
     const series = seriesList.find(item =>
-        String(item.id) === String(id)
+        String(item.judul) === (judul)
     );
 
     if (!series) return;
